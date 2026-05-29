@@ -1,0 +1,15 @@
+node_modules
+.next
+.vercel
+.env*
+!.env.example
+*.log
+.DS_Store
+next-env.d.ts
+.vapid.json
+public/uploads/*
+!public/uploads/.gitkeep
+.omc/
+.claude/
+prisma/dev.db
+prisma/dev.db-journal

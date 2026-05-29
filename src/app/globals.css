@@ -1,0 +1,249 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---------------------------------------------------------------
+   Design tokens — Codex-inspired refined neutral palette.
+   Light + dark surfaces driven by next-themes' .dark class.
+--------------------------------------------------------------- */
+@layer base {
+  :root {
+    --bg: 252 252 251;
+    --bg-subtle: 247 247 245;
+    --bg-muted: 237 236 232;
+    --fg: 23 23 23;
+    --fg-muted: 99 99 96;
+    --fg-subtle: 161 161 156;
+    --border: 226 226 222;
+    --accent: 23 23 23;
+    --accent-fg: 252 252 251;
+
+    /* warm sand → muted bronze → graphite — readable on light bg */
+    --grad-1: 156 124 90;
+    --grad-2: 88 74 58;
+    --grad-3: 38 38 38;
+  }
+
+  .dark {
+    --bg: 12 12 14;
+    --bg-subtle: 18 18 20;
+    --bg-muted: 28 28 32;
+    --fg: 245 245 244;
+    --fg-muted: 168 162 158;
+    --fg-subtle: 87 83 78;
+    --border: 38 38 42;
+    --accent: 244 244 245;
+    --accent-fg: 12 12 14;
+
+    --grad-1: 213 192 168;
+    --grad-2: 250 247 240;
+    --grad-3: 156 159 168;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-bg text-fg antialiased;
+    font-feature-settings: "ss01", "cv11";
+    background-image:
+      radial-gradient(60% 50% at 50% 0%, rgb(var(--grad-2) / 0.06), transparent 70%),
+      radial-gradient(40% 30% at 100% 100%, rgb(var(--grad-1) / 0.05), transparent 60%);
+  }
+
+  /* subtle film grain */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.035;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  ::selection {
+    background: rgb(var(--grad-1) / 0.35);
+    color: rgb(var(--fg));
+  }
+}
+
+/* ---------------------------------------------------------------
+   Codex-style gradient display text.
+--------------------------------------------------------------- */
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(
+      100deg,
+      rgb(var(--grad-1)) 0%,
+      rgb(var(--grad-2)) 45%,
+      rgb(var(--grad-3)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    background-size: 200% 100%;
+    background-position: 0% 50%;
+  }
+
+  .text-gradient-animated {
+    animation: gradient-pan 12s ease-in-out infinite;
+  }
+
+  @keyframes gradient-pan {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  .hairline {
+    box-shadow: inset 0 0 0 1px rgb(var(--border));
+  }
+
+  /* ------------------------------------------------------------------
+     Motion language — Apple's iOS standard curve (cubic-bezier(0.32, 0.72, 0, 1))
+     with a longer dwell + opacity stagger. Inspired by Apple HIG + ChatGPT's
+     content reveals.
+     ------------------------------------------------------------------ */
+  @keyframes apple-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+  @keyframes apple-pop {
+    0% {
+      opacity: 0;
+      transform: scale(0.94) translateY(8px);
+      filter: blur(6px);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+    }
+  }
+  @keyframes apple-slide-in {
+    from {
+      opacity: 0;
+      transform: translateX(28px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  @keyframes apple-stage {
+    from {
+      opacity: 0;
+      transform: translateY(12px) scale(0.985);
+      filter: blur(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      filter: blur(0);
+    }
+  }
+
+  .anim-fade-in {
+    animation: apple-fade-up 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .anim-pop {
+    animation: apple-pop 460ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .anim-slide {
+    animation: apple-slide-in 480ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  /* Step / page transitions */
+  .anim-stage {
+    animation: apple-stage 460ms cubic-bezier(0.32, 0.72, 0, 1) both;
+  }
+  .anim-stagger > * {
+    animation: apple-fade-up 520ms cubic-bezier(0.32, 0.72, 0, 1) both;
+    opacity: 0;
+  }
+  .anim-stagger > *:nth-child(1) { animation-delay: 40ms; }
+  .anim-stagger > *:nth-child(2) { animation-delay: 90ms; }
+  .anim-stagger > *:nth-child(3) { animation-delay: 140ms; }
+  .anim-stagger > *:nth-child(4) { animation-delay: 190ms; }
+  .anim-stagger > *:nth-child(5) { animation-delay: 240ms; }
+  .anim-stagger > *:nth-child(6) { animation-delay: 290ms; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .anim-fade-in,
+    .anim-pop,
+    .anim-slide,
+    .anim-stage,
+    .anim-stagger > * {
+      animation: none !important;
+      opacity: 1 !important;
+      filter: none !important;
+      transform: none !important;
+    }
+  }
+
+  /* Dialog / sheet animations */
+  @keyframes dialog-overlay-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes dialog-overlay-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+  }
+  @keyframes dialog-content-in {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -48%) scale(0.96);
+      filter: blur(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+      filter: blur(0);
+    }
+  }
+  @keyframes dialog-content-out {
+    from {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translate(-50%, -48%) scale(0.96);
+    }
+  }
+  .dialog-overlay[data-state="open"] {
+    animation: dialog-overlay-in 200ms ease-out;
+  }
+  .dialog-overlay[data-state="closed"] {
+    animation: dialog-overlay-out 160ms ease-in;
+  }
+  .dialog-content[data-state="open"] {
+    animation: dialog-content-in 380ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .dialog-content[data-state="closed"] {
+    animation: dialog-content-out 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* Market ticker marquee */
+  @keyframes ticker-scroll {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+  .ticker-track {
+    animation: ticker-scroll 60s linear infinite;
+    width: max-content;
+  }
+  .ticker-track:hover {
+    animation-play-state: paused;
+  }
+}
