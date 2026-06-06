@@ -15,6 +15,7 @@ type Props = {
   anchor: Date;
   selected: Date;
   events: EventDTO[];
+  weightByDate?: Map<string, number>;
   onSelectDay: (d: Date) => void;
   onSelectEvent: (e: EventDTO) => void;
 };
@@ -45,6 +46,7 @@ export function MonthView({
   anchor,
   selected,
   events,
+  weightByDate,
   onSelectDay,
   onSelectEvent,
 }: Props) {
@@ -83,6 +85,9 @@ export function MonthView({
             .filter((e) => (e as EventDTO & { mood?: string | null }).mood)
             .map((e) => (e as EventDTO & { mood?: string | null }).mood!)
             .pop();
+
+          const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+          const weight = weightByDate?.get(dayKey);
 
           return (
             <button
@@ -146,6 +151,15 @@ export function MonthView({
                   </span>
                 )}
               </div>
+
+              {weight !== undefined && !muted && (
+                <span
+                  className="absolute bottom-1 right-1 rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted"
+                  title="체중"
+                >
+                  {weight.toFixed(1)}kg
+                </span>
+              )}
             </button>
           );
         })}

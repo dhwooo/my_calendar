@@ -5,6 +5,7 @@ import useSWR from "swr";
 import {
   ChevronRight,
   ChevronDown,
+  ChevronLeft,
   FileText,
   Plus,
   Trash2,
@@ -50,8 +51,12 @@ export function WikiClient({
   const tree = buildTree(pages);
 
   const [activeId, setActiveId] = React.useState<string | null>(null);
+  // Auto-select first page only on desktop (mobile starts on list view)
   React.useEffect(() => {
-    if (!activeId && pages.length > 0) setActiveId(pages[0].id);
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(min-width: 768px)").matches) {
+      if (!activeId && pages.length > 0) setActiveId(pages[0].id);
+    }
   }, [pages, activeId]);
 
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
@@ -160,53 +165,99 @@ export function WikiClient({
         </div>
       </aside>
 
-      {/* Mobile: page selector */}
-      <div className="flex w-full overflow-auto border-b border-border/60 bg-bg-subtle/30 px-3 py-2 md:hidden">
-        {pages.length === 0 ? (
-          <button
-            onClick={() => createPage(null)}
-            className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[12px] font-medium text-fg-muted hover:bg-bg-muted hover:text-fg"
-          >
-            <Plus className="h-3.5 w-3.5" />첫 페이지
-          </button>
-        ) : (
-          <div className="flex gap-1.5">
-            {pages.map((p) => (
+      {/* Mobile: 풀스크린 list ↔ editor (Notion 스타일) */}
+      <main className="flex flex-1 flex-col overflow-hidden md:overflow-auto">
+        {/* Mobile list view — activeId 없을 때만 */}
+        {!activeId && (
+          <div className="flex flex-1 flex-col overflow-y-auto bg-bg md:hidden">
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border/60 bg-bg/95 px-4 py-3 backdrop-blur">
+              <h2 className="text-[15px] font-semibold tracking-tight text-fg">
+                워크스페이스
+              </h2>
               <button
-                key={p.id}
-                onClick={() => setActiveId(p.id)}
-                className={cn(
-                  "shrink-0 rounded-lg px-3 py-1.5 text-[12px] font-medium transition",
-                  activeId === p.id
-                    ? "bg-bg text-fg shadow-sm"
-                    : "text-fg-muted hover:bg-bg-muted",
-                )}
+                onClick={() => createPage(null)}
+                className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-medium text-accent-fg"
               >
-                {p.icon ? `${p.icon} ` : ""}
-                {p.title || "이름 없음"}
+                <Plus className="h-3.5 w-3.5" />
+                새 페이지
               </button>
-            ))}
-            <button
-              onClick={() => createPage(null)}
-              className="shrink-0 rounded-lg p-1.5 text-fg-muted hover:bg-bg-muted hover:text-fg"
-              aria-label="새 페이지"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
-        )}
-      </div>
+            </div>
 
-      {/* Editor */}
-      <main className="flex-1 overflow-auto">
-        {activeId ? (
-          <WikiEditor key={activeId} id={activeId} onMutateTree={mutate} />
-        ) : (
-          <div className="flex h-full flex-col items-center justify-center gap-3 text-fg-muted">
-            <FileText className="h-8 w-8" />
-            <p className="text-[14px]">왼쪽에서 페이지를 선택해주세요</p>
+            <div className="flex-1 px-3 py-2">
+              {pages.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 pt-12 text-center">
+                  <FileText className="h-8 w-8 text-fg-subtle" />
+                  <p className="text-[14px] text-fg-muted">아직 페이지가 없어요</p>
+                  <button
+                    onClick={async () => {
+                      const res = await fetch("/api/wiki/seed/linux-master", {
+                        method: "POST",
+                      });
+                      if (res.ok) await mutate();
+                    }}
+                    className="mt-2 flex items-center gap-2 rounded-xl border border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8 px-4 py-3"
+                  >
+                    <span className="text-[18px]">🐧</span>
+                    <span className="text-left">
+                      <span className="block text-[13px] font-medium text-fg">
+                        리눅스마스터 2급 2차
+                      </span>
+                      <span className="block font-mono text-[10px] text-fg-subtle">
+                        합격 플랜 가져오기
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              ) : (
+                <ul className="space-y-0.5">
+                  {pages
+                    .filter((p) => !p.parentId)
+                    .map((p) => (
+                      <MobilePageRow
+                        key={p.id}
+                        page={p}
+                        allPages={pages}
+                        depth={0}
+                        onSelect={setActiveId}
+                        onDelete={deletePage}
+                        onAddChild={createPage}
+                      />
+                    ))}
+                </ul>
+              )}
+            </div>
           </div>
         )}
+
+        {/* Editor view (모바일: activeId 있을 때 풀스크린, 데스크탑: 항상) */}
+        <div
+          className={cn(
+            "flex-1 overflow-y-auto",
+            activeId ? "flex flex-col" : "hidden md:flex md:flex-col",
+          )}
+        >
+          {activeId ? (
+            <>
+              {/* Mobile-only back bar */}
+              <div className="sticky top-0 z-10 flex items-center gap-2 border-b border-border/60 bg-bg/95 px-3 py-2 backdrop-blur md:hidden">
+                <button
+                  onClick={() => setActiveId(null)}
+                  className="flex items-center gap-1 rounded-lg px-2 py-1.5 text-[13px] font-medium text-fg-muted hover:bg-bg-muted hover:text-fg"
+                  aria-label="목록으로"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  목록
+                </button>
+              </div>
+              <WikiEditor key={activeId} id={activeId} onMutateTree={mutate} />
+            </>
+          ) : (
+            <div className="flex h-full flex-col items-center justify-center gap-3 text-fg-muted">
+              <FileText className="h-8 w-8" />
+              <p className="text-[14px]">왼쪽에서 페이지를 선택해주세요</p>
+            </div>
+          )}
+        </div>
       </main>
     </div>
   );
@@ -309,5 +360,96 @@ function PageTree({
         );
       })}
     </div>
+  );
+}
+
+function MobilePageRow({
+  page,
+  allPages,
+  depth,
+  onSelect,
+  onDelete,
+  onAddChild,
+}: {
+  page: WikiPageMeta;
+  allPages: WikiPageMeta[];
+  depth: number;
+  onSelect: (id: string) => void;
+  onDelete: (id: string) => void;
+  onAddChild: (parentId: string) => void;
+}) {
+  const [open, setOpen] = React.useState(true);
+  const children = allPages.filter((p) => p.parentId === page.id);
+  const hasChildren = children.length > 0;
+
+  return (
+    <li>
+      <div
+        className="group flex items-center gap-1 rounded-xl py-2.5 pr-2 active:bg-bg-muted"
+        style={{ paddingLeft: 8 + depth * 16 }}
+      >
+        <button
+          onClick={() => setOpen((v) => !v)}
+          className={cn(
+            "flex h-7 w-7 items-center justify-center text-fg-subtle",
+            !hasChildren && "opacity-30",
+          )}
+          aria-label="펼치기"
+        >
+          {open ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+        <button
+          onClick={() => onSelect(page.id)}
+          className="flex flex-1 items-center gap-2 text-left"
+        >
+          <span className="w-5 text-center text-[16px]">
+            {page.icon ?? <FileText className="inline h-4 w-4 text-fg-subtle" />}
+          </span>
+          <span className="truncate text-[14px] font-medium text-fg">
+            {page.title || "이름 없음"}
+          </span>
+        </button>
+        <button
+          onClick={() => onAddChild(page.id)}
+          className="rounded-md p-1.5 text-fg-subtle active:bg-bg-muted active:text-fg"
+          aria-label="하위 페이지"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className="rounded-md p-1.5 text-fg-subtle active:bg-bg-muted active:text-fg"
+            aria-label="더보기"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem destructive onSelect={() => onDelete(page.id)}>
+              <Trash2 className="h-3.5 w-3.5" />
+              삭제
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+      {open && hasChildren && (
+        <ul className="space-y-0.5">
+          {children.map((c) => (
+            <MobilePageRow
+              key={c.id}
+              page={c}
+              allPages={allPages}
+              depth={depth + 1}
+              onSelect={onSelect}
+              onDelete={onDelete}
+              onAddChild={onAddChild}
+            />
+          ))}
+        </ul>
+      )}
+    </li>
   );
 }

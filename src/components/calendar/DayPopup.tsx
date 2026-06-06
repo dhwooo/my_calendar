@@ -18,6 +18,7 @@ type Props = {
   onOpenChange: (v: boolean) => void;
   date: Date | null;
   events: EventDTO[];
+  weightKg?: number | null;
   onAdd: () => void;
   onSelectEvent: (e: EventDTO) => void;
 };
@@ -27,6 +28,7 @@ export function DayPopup({
   onOpenChange,
   date,
   events,
+  weightKg,
   onAdd,
   onSelectEvent,
 }: Props) {
@@ -61,11 +63,18 @@ export function DayPopup({
               {format(date, "EEE")}
             </span>
           </div>
-          {holiday && (
-            <span className="mt-2 inline-block rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-500">
-              {holiday}
-            </span>
-          )}
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {holiday && (
+              <span className="inline-block rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-500">
+                {holiday}
+              </span>
+            )}
+            {weightKg != null && (
+              <span className="inline-block rounded-full bg-fg/8 px-2 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted">
+                ⚖︎ {weightKg.toFixed(1)}kg
+              </span>
+            )}
+          </div>
           {isSameDay(date, new Date()) && !holiday && (
             <span className="mt-2 inline-block font-mono text-[10px] uppercase tracking-[0.2em] text-fg-subtle">
               today

@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { addYears, subYears } from "date-fns";
+import useSWR from "swr";
+import { addYears, format, subYears } from "date-fns";
 import { X } from "lucide-react";
 import {
   addMonths,
@@ -63,6 +64,18 @@ export function CalendarShell() {
 
   const range = rangeForView(view, anchor);
   const { events, refresh, refreshIcal } = useEvents(range);
+
+  // Weight entries — for displaying kg badges on calendar days.
+  const { data: weightData } = useSWR<{
+    entries: Array<{ id: string; date: string; kg: number }>;
+  }>("/api/weight");
+  const weightByDate = React.useMemo(() => {
+    const map = new Map<string, number>();
+    for (const w of weightData?.entries ?? []) {
+      map.set(format(new Date(w.date), "yyyy-MM-dd"), w.kg);
+    }
+    return map;
+  }, [weightData]);
 
   const navigate = (dir: 1 | -1) => {
     setAnchor((d) => {
@@ -182,6 +195,7 @@ export function CalendarShell() {
                   anchor={anchor}
                   selected={selected}
                   events={events}
+                  weightByDate={weightByDate}
                   onSelectDay={(d) => {
                     setSelected(d);
                     setDayPopupDate(d);
@@ -220,6 +234,11 @@ export function CalendarShell() {
         onOpenChange={(v) => !v && setDayPopupDate(null)}
         date={dayPopupDate}
         events={events}
+        weightKg={
+          dayPopupDate
+            ? weightByDate.get(format(dayPopupDate, "yyyy-MM-dd")) ?? null
+            : null
+        }
         onAdd={() => {
           const d = dayPopupDate;
           setDayPopupDate(null);
