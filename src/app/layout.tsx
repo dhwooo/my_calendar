@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { PWARegistrar } from "@/components/PWARegistrar";
+import { NavProgress } from "@/components/NavProgress";
 
 export const metadata: Metadata = {
   title: "Private Calendar",
@@ -42,7 +43,10 @@ export default function RootLayout({
       className={`${GeistSans.variable} ${GeistMono.variable}`}
     >
       <body className="min-h-[100dvh] font-sans">
-        <Providers>{children}</Providers>
+        <Providers>
+          <NavProgress />
+          {children}
+        </Providers>
         <PWARegistrar />
       </body>
     </html>

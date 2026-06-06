@@ -62,7 +62,7 @@ export function CalendarShell() {
   const [navOpen, setNavOpen] = React.useState(false);
 
   const range = rangeForView(view, anchor);
-  const { events, refresh } = useEvents(range);
+  const { events, refresh, refreshIcal } = useEvents(range);
 
   const navigate = (dir: 1 | -1) => {
     setAnchor((d) => {
@@ -117,6 +117,7 @@ export function CalendarShell() {
       }}
       onSync={handleSync}
       syncing={syncing}
+      onRefreshIcal={refreshIcal}
     />
   );
 

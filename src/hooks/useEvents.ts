@@ -7,11 +7,21 @@ export function useEvents(range: { start: Date; end: Date }) {
   const key = `/api/calendar/events?from=${range.start.toISOString()}&to=${range.end.toISOString()}`;
   const { data, error, isLoading, mutate } = useSWR<{ events: EventDTO[] }>(key);
 
+  async function refreshIcal() {
+    // Force-refresh: bypass server-side cache for ICS feed.
+    const res = await fetch(`${key}&refresh=1`);
+    if (res.ok) {
+      const fresh = (await res.json()) as { events: EventDTO[] };
+      await mutate(fresh, { revalidate: false });
+    }
+  }
+
   return {
     events: data?.events ?? [],
     isLoading,
     error,
     refresh: mutate,
+    refreshIcal,
   };
 }
 

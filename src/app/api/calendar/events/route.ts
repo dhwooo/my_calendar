@@ -49,8 +49,13 @@ export async function GET(req: Request) {
     end: e.end.toISOString(),
   }));
 
+  const force = searchParams.get("refresh") === "1";
   const icalEvents = user?.icalUrl
-    ? await fetchIcalEvents(user.icalUrl, { start: fromDate, end: toDate })
+    ? await fetchIcalEvents(
+        user.icalUrl,
+        { start: fromDate, end: toDate },
+        { force },
+      )
     : [];
 
   return NextResponse.json({

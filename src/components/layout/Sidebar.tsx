@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { signIn } from "next-auth/react";
 import useSWR from "swr";
 import { Plus, RefreshCw, Link2 } from "lucide-react";
@@ -20,6 +21,7 @@ type Props = {
   onCreate: () => void;
   onSync: () => void;
   syncing?: boolean;
+  onRefreshIcal?: () => Promise<void> | void;
 };
 
 type StatusResp = { connected: boolean };
@@ -31,13 +33,19 @@ export function Sidebar({
   onCreate,
   onSync,
   syncing,
+  onRefreshIcal,
 }: Props) {
   const days = daysBetween(monthGridRange(anchor));
   const weekHeader = ["월", "화", "수", "목", "금", "토", "일"];
   const today = new Date();
+  const [refreshing, setRefreshing] = React.useState(false);
 
   const { data: status } = useSWR<StatusResp>("/api/calendar/google-status");
   const connected = !!status?.connected;
+  const { data: profile } = useSWR<{ user: { icalUrl: string | null } }>(
+    "/api/profile",
+  );
+  const hasIcal = !!profile?.user?.icalUrl;
 
   return (
     <aside className="relative z-10 flex h-full w-[260px] shrink-0 flex-col gap-6 border-r border-border/60 bg-bg-subtle/30 px-5 py-6 backdrop-blur-sm">
@@ -92,6 +100,40 @@ export function Sidebar({
       </div>
 
       <div className="mt-auto space-y-3">
+        {hasIcal && onRefreshIcal && (
+          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[12px] font-medium text-fg">
+                iCal 구독
+              </span>
+              <span className="font-mono text-[10px] text-emerald-600">
+                ● 활성
+              </span>
+            </div>
+            <Button
+              variant="outline"
+              className="mt-2 h-8 w-full justify-center gap-2 rounded-lg text-[12px]"
+              onClick={async () => {
+                setRefreshing(true);
+                try {
+                  await onRefreshIcal();
+                } finally {
+                  setRefreshing(false);
+                }
+              }}
+              disabled={refreshing}
+            >
+              <RefreshCw
+                className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
+              />
+              {refreshing ? "가져오는 중..." : "지금 새로고침"}
+            </Button>
+            <p className="mt-2 font-mono text-[10px] leading-relaxed text-fg-subtle">
+              자동: 5분마다. 즉시 반영하려면 이 버튼.
+            </p>
+          </div>
+        )}
+
         <div
           className={cn(
             "rounded-2xl border p-4",

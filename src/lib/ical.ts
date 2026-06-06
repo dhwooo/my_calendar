@@ -1,20 +1,29 @@
 import type { EventDTO } from "@/types/calendar";
 
+type Range = { start: Date; end: Date };
+
 /**
- * Google Calendar의 "Secret address in iCal format" URL을 fetch + 파싱.
+ * Google Calendar의 "Secret address in iCal format" URL fetch + 파싱.
  *
- * 사용처: /api/calendar/events GET 에서 사용자가 등록한 URL을 가져와
- *        DB events 리스트와 합쳐서 응답.
- *
- * 캐싱: Next.js fetch 의 revalidate=300 으로 5분간 ISR.
+ * @param force true면 Next 캐시 우회 (사용자가 수동 새로고침 누를 때).
+ *              기본은 5분 ISR.
  */
 export async function fetchIcalEvents(
   url: string,
-  range: { start: Date; end: Date },
+  range: Range,
+  options: { force?: boolean } = {},
 ): Promise<EventDTO[]> {
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } });
-    if (!res.ok) return [];
+    const res = await fetch(
+      url,
+      options.force
+        ? { cache: "no-store" }
+        : { next: { revalidate: 300 } },
+    );
+    if (!res.ok) {
+      console.warn("[ical] fetch failed", res.status, res.statusText);
+      return [];
+    }
     const ics = await res.text();
     const { default: ical } = await import("node-ical");
     const parsed = ical.sync.parseICS(ics);
@@ -26,8 +35,9 @@ export async function fetchIcalEvents(
       const start = new Date(item.start as Date);
       const end = new Date(item.end as Date);
 
-      // RRULE 처리 — 반복 일정을 range 내에서 펼침
-      const rrule = (item as { rrule?: { between: (a: Date, b: Date, inc: boolean) => Date[] } }).rrule;
+      const rrule = (item as {
+        rrule?: { between: (a: Date, b: Date, inc: boolean) => Date[] };
+      }).rrule;
       if (rrule) {
         const occurrences = rrule.between(range.start, range.end, true);
         const duration = end.getTime() - start.getTime();
@@ -40,14 +50,22 @@ export async function fetchIcalEvents(
       if (end < range.start || start > range.end) continue;
       events.push(toDTO(item, start, end));
     }
+    console.log(`[ical] ${events.length} events from ${url.slice(0, 80)}...`);
     return events;
-  } catch {
+  } catch (err) {
+    console.error("[ical] parse error", err);
     return [];
   }
 }
 
 function toDTO(
-  item: { uid?: string; summary?: string; description?: string; location?: string; datetype?: string },
+  item: {
+    uid?: string;
+    summary?: string;
+    description?: string;
+    location?: string;
+    datetype?: string;
+  },
   start: Date,
   end: Date,
 ): EventDTO {
