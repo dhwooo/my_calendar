@@ -1,0 +1,247 @@
+"use client";
+
+import * as React from "react";
+import useSWR, { mutate } from "swr";
+import { ChevronLeft, ChevronRight, Plus, Target, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+type Goal = {
+  id: string;
+  year: number;
+  month: number | null;
+  text: string;
+  done: boolean;
+};
+
+const MONTH_LABELS = [
+  "1월",
+  "2월",
+  "3월",
+  "4월",
+  "5월",
+  "6월",
+  "7월",
+  "8월",
+  "9월",
+  "10월",
+  "11월",
+  "12월",
+];
+
+export function GoalsClient() {
+  const [year, setYear] = React.useState(() => new Date().getFullYear());
+  const key = `/api/goals?year=${year}`;
+  const { data } = useSWR<{ goals: Goal[] }>(key);
+  const goals = data?.goals ?? [];
+  const yearGoals = goals.filter((g) => g.month === null);
+  const goalsByMonth = (m: number) => goals.filter((g) => g.month === m);
+
+  return (
+    <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-10 anim-fade-in">
+      <div className="mb-6 flex items-baseline gap-3">
+        <h1 className="text-gradient text-[32px] font-semibold tracking-tight sm:text-[40px]">
+          목표
+        </h1>
+        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-subtle">
+          goals
+        </span>
+      </div>
+
+      <div className="mb-5 flex items-center gap-2 rounded-2xl border border-border/60 bg-bg-subtle/40 p-2">
+        <Button variant="ghost" size="icon" onClick={() => setYear((y) => y - 1)}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div className="flex flex-1 items-baseline justify-center gap-2">
+          <span className="text-[20px] font-semibold tracking-tight text-fg">
+            {year}
+          </span>
+          <span className="font-mono text-[11px] text-fg-subtle">year</span>
+        </div>
+        <Button variant="ghost" size="icon" onClick={() => setYear((y) => y + 1)}>
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 rounded-lg text-[11px]"
+          onClick={() => setYear(new Date().getFullYear())}
+        >
+          올해
+        </Button>
+      </div>
+
+      <Card
+        title={`${year}년 목표`}
+        sub="year"
+        goals={yearGoals}
+        year={year}
+        month={null}
+        cacheKey={key}
+        large
+      />
+
+      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {MONTH_LABELS.map((label, i) => (
+          <Card
+            key={i}
+            title={label}
+            sub="month"
+            goals={goalsByMonth(i + 1)}
+            year={year}
+            month={i + 1}
+            cacheKey={key}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Card({
+  title,
+  sub,
+  goals,
+  year,
+  month,
+  cacheKey,
+  large,
+}: {
+  title: string;
+  sub: string;
+  goals: Goal[];
+  year: number;
+  month: number | null;
+  cacheKey: string;
+  large?: boolean;
+}) {
+  const [text, setText] = React.useState("");
+  const done = goals.filter((g) => g.done).length;
+
+  const add = async () => {
+    const v = text.trim();
+    if (!v) return;
+    setText("");
+    await fetch("/api/goals", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ year, month, text: v }),
+    });
+    mutate(cacheKey);
+  };
+  const toggle = async (g: Goal) => {
+    await fetch(`/api/goals/${g.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ done: !g.done }),
+    });
+    mutate(cacheKey);
+  };
+  const remove = async (g: Goal) => {
+    await fetch(`/api/goals/${g.id}`, { method: "DELETE" });
+    mutate(cacheKey);
+  };
+
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-border/60 bg-bg shadow-sm",
+        large ? "p-5" : "p-4",
+      )}
+    >
+      <div className="mb-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Target className={cn("text-fg-muted", large ? "h-4 w-4" : "h-3.5 w-3.5")} />
+          <span
+            className={cn(
+              "font-semibold tracking-tight text-fg",
+              large ? "text-[15px]" : "text-[13px]",
+            )}
+          >
+            {title}
+          </span>
+          <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle">
+            {sub}
+          </span>
+        </div>
+        {goals.length > 0 && (
+          <span className="font-mono text-[11px] text-fg-muted">
+            {done}/{goals.length}
+          </span>
+        )}
+      </div>
+
+      <div className="mb-2 flex gap-1.5">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder={`${title} 추가`}
+          className={cn(
+            "flex-1 rounded-lg border border-border/60 bg-bg-subtle/40 px-2.5 outline-none focus:border-accent/60 focus:bg-bg",
+            large ? "h-9 text-[13px]" : "h-8 text-[12px]",
+          )}
+        />
+        <Button
+          onClick={add}
+          variant="outline"
+          className={cn("gap-1 rounded-lg px-2", large ? "h-9 text-[12px]" : "h-8 text-[11px]")}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+
+      {goals.length === 0 ? (
+        <p className="px-1 py-1 font-mono text-[10px] text-fg-subtle">비어 있음</p>
+      ) : (
+        <ul className="space-y-0.5">
+          {goals.map((g) => (
+            <li
+              key={g.id}
+              className="group flex items-start gap-2 rounded-lg px-1 py-1 hover:bg-bg-muted"
+            >
+              <button
+                onClick={() => toggle(g)}
+                className={cn(
+                  "mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border",
+                  g.done
+                    ? "border-accent bg-accent text-accent-fg"
+                    : "border-border hover:border-fg/40",
+                )}
+              >
+                {g.done && (
+                  <svg viewBox="0 0 20 20" className="h-3 w-3">
+                    <path
+                      d="M5 10.5l3.5 3.5L15 7"
+                      stroke="currentColor"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      fill="none"
+                    />
+                  </svg>
+                )}
+              </button>
+              <span
+                className={cn(
+                  "flex-1 leading-snug",
+                  large ? "text-[13px]" : "text-[12px]",
+                  g.done ? "text-fg-subtle line-through" : "text-fg",
+                )}
+              >
+                {g.text}
+              </span>
+              <button
+                onClick={() => remove(g)}
+                className="rounded-sm p-0.5 text-fg-subtle opacity-0 hover:text-red-500 group-hover:opacity-100"
+                aria-label="삭제"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}

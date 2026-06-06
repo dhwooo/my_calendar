@@ -107,11 +107,7 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="flex-1 space-y-3 overflow-y-auto">
-        <GoalsPanel anchor={anchor} />
-      </div>
-
-      <div className="space-y-3">
+      <div className="mt-auto space-y-3">
         {hasIcal && onRefreshIcal && (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
             <div className="mb-1 flex items-center justify-between">

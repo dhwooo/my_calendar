@@ -22,6 +22,7 @@ import { EventModal } from "@/components/calendar/EventModal";
 import { EventDetailsPopup } from "@/components/calendar/EventDetailsPopup";
 import { DayPopup } from "@/components/calendar/DayPopup";
 import { DashboardRail } from "@/components/calendar/DashboardRail";
+import { GoalStrip } from "@/components/calendar/GoalStrip";
 import { Button } from "@/components/ui/button";
 import {
   createEvent,
@@ -177,17 +178,23 @@ export function CalendarShell() {
                 />
               )}
               {view === "month" && (
-                <MonthView
-                  anchor={anchor}
-                  selected={selected}
-                  events={events}
-                  weightByDate={weightByDate}
-                  onSelectDay={(d) => {
-                    setSelected(d);
-                    setDayPopupDate(d);
-                  }}
-                  onSelectEvent={openDetail}
-                />
+                <>
+                  <MonthView
+                    anchor={anchor}
+                    selected={selected}
+                    events={events}
+                    weightByDate={weightByDate}
+                    onSelectDay={(d) => {
+                      setSelected(d);
+                      setDayPopupDate(d);
+                    }}
+                    onSelectEvent={openDetail}
+                  />
+                  <GoalStrip
+                    year={anchor.getFullYear()}
+                    month={anchor.getMonth() + 1}
+                  />
+                </>
               )}
               {view === "week" && (
                 <WeekView
