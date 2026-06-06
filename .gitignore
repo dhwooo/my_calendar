@@ -1,15 +1,72 @@
+# ─── Dependencies ───────────────────────────────
 node_modules
+.pnp
+.pnp.*
+.yarn/cache
+.yarn/install-state.gz
+
+# ─── Next.js ────────────────────────────────────
 .next
-.vercel
-.env*
-!.env.example
-*.log
-.DS_Store
+out
+build
+.swc
 next-env.d.ts
+
+# ─── Vercel ─────────────────────────────────────
+.vercel
+
+# ─── Environment / secrets ──────────────────────
+.env
+.env.*
+!.env.example
 .vapid.json
+
+# ─── User uploads (local dev FS storage) ────────
 public/uploads/*
 !public/uploads/.gitkeep
-.omc/
-.claude/
+
+# ─── Prisma local SQLite (legacy / dev fallback) ─
 prisma/dev.db
 prisma/dev.db-journal
+prisma/*.db
+prisma/*.db-journal
+
+# ─── Tooling caches ─────────────────────────────
+.omc/
+.claude/
+.cache
+.parcel-cache
+.eslintcache
+.tsbuildinfo
+*.tsbuildinfo
+
+# ─── Tests / coverage ───────────────────────────
+coverage
+*.lcov
+playwright-report
+test-results
+
+# ─── Logs ───────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ─── IDE / editor ───────────────────────────────
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+*.swo
+
+# ─── OS ─────────────────────────────────────────
+.DS_Store
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── Misc ───────────────────────────────────────
+*.tgz
+.history

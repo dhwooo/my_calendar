@@ -14,14 +14,17 @@ type Props = {
 export function PinInput({
   value,
   onChange,
-  length = 6,
+  length = 4,
   autoFocus,
   onComplete,
 }: Props) {
   const refs = React.useRef<Array<HTMLInputElement | null>>([]);
 
   React.useEffect(() => {
-    if (autoFocus) refs.current[0]?.focus();
+    if (!autoFocus) return;
+    // Defer focus to after layout/anim so it works reliably across step transitions.
+    const t = setTimeout(() => refs.current[0]?.focus(), 60);
+    return () => clearTimeout(t);
   }, [autoFocus]);
 
   const setAt = (i: number, ch: string) => {

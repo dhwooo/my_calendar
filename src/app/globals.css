@@ -1,3 +1,6 @@
+/* Pretendard — Apple SD Gothic Neo 풍의 모던 산세리프 */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -29,14 +29,15 @@ export default function SignUpPage() {
         return setError("ID는 영문/숫자 2~24자만 사용할 수 있어요.");
       setStep(2);
     } else if (step === 2) {
-      if (pin.length !== 6) return setError("PIN을 6자리로 입력해주세요.");
+      if (pin.length !== 4) return setError("PIN을 4자리로 입력해주세요.");
       setStep(3);
     }
   }
 
-  async function submit() {
+  async function submit(confirmPin?: string) {
     setError(null);
-    if (pin !== pin2) {
+    const confirm = confirmPin ?? pin2;
+    if (pin !== confirm) {
       setError("PIN이 일치하지 않습니다. 다시 입력해주세요.");
       setPin2("");
       return;
@@ -116,7 +117,7 @@ export default function SignUpPage() {
           </h1>
           <p className="mx-auto max-w-[280px] text-[13px] leading-relaxed text-fg-muted">
             {step === 1 && "이름과 ID만 정해주시면 됩니다."}
-            {step === 2 && "로그인 시 사용할 숫자 6자리입니다."}
+            {step === 2 && "로그인 시 사용할 숫자 4자리입니다."}
             {step === 3 && "방금 입력한 PIN을 확인해주세요."}
           </p>
         </div>
@@ -163,7 +164,7 @@ export default function SignUpPage() {
               onChange={setPin2}
               autoFocus
               onComplete={(v) => {
-                if (v === pin) submit();
+                if (v === pin) submit(v);
                 else {
                   setError("PIN이 일치하지 않습니다. 다시 입력해주세요.");
                   setPin2("");
@@ -187,7 +188,7 @@ export default function SignUpPage() {
           {step === 3 && (
             <Button
               onClick={submit}
-              disabled={loading || pin2.length !== 6}
+              disabled={loading || pin2.length !== 4}
               className="h-11 w-full rounded-xl"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "가입 완료"}

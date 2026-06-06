@@ -93,7 +93,7 @@ export default function SignInPage() {
             <PinInput
               value={pin}
               onChange={setPin}
-              length={6}
+              length={4}
               onComplete={(p) => submit(undefined, p)}
             />
           </div>
@@ -107,7 +107,7 @@ export default function SignInPage() {
 
           <Button
             type="submit"
-            disabled={loading || pin.length !== 6 || !username}
+            disabled={loading || pin.length !== 4 || !username}
             className="h-11 w-full rounded-xl"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "로그인"}

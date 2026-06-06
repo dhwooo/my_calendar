@@ -130,13 +130,32 @@ export function WikiClient({
             onDelete={deletePage}
           />
           {pages.length === 0 && (
-            <button
-              onClick={() => createPage(null)}
-              className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition hover:bg-bg-muted hover:text-fg"
-            >
-              <Plus className="h-3.5 w-3.5" />
-              첫 페이지 만들기
-            </button>
+            <div className="mt-2 space-y-2">
+              <button
+                onClick={() => createPage(null)}
+                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition hover:bg-bg-muted hover:text-fg"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                첫 페이지 만들기
+              </button>
+              <button
+                onClick={async () => {
+                  const res = await fetch("/api/wiki/seed/linux-master", {
+                    method: "POST",
+                  });
+                  if (res.ok) await mutate();
+                }}
+                className="flex w-full items-center gap-2 rounded-lg border border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8 px-2.5 py-2.5 text-left text-[12px] text-fg transition hover:from-[rgb(var(--grad-1))]/12 hover:to-[rgb(var(--grad-3))]/12"
+              >
+                <span className="text-[16px]">🐧</span>
+                <span className="flex-1">
+                  <span className="block font-medium">리눅스마스터 2급 2차</span>
+                  <span className="block font-mono text-[10px] text-fg-subtle">
+                    합격 플랜 가져오기
+                  </span>
+                </span>
+              </button>
+            </div>
           )}
         </div>
       </aside>

@@ -89,33 +89,44 @@ export function MonthView({
               key={d.toISOString()}
               onClick={() => onSelectDay(d)}
               className={cn(
-                "relative flex min-h-[96px] sm:min-h-[112px] flex-col items-stretch p-2 text-left transition",
+                "group relative flex min-h-[96px] sm:min-h-[112px] flex-col items-stretch p-2 text-left transition",
                 "hover:bg-bg-subtle/60",
                 col < 6 && "border-r border-border/60",
                 row < 5 && "border-b border-border/60",
                 muted && "bg-bg-subtle/30",
                 isSel && "bg-bg-subtle/80",
+                holiday && !muted && "bg-red-500/[0.035] hover:bg-red-500/[0.06]",
               )}
             >
-              <div className="mb-1.5 flex items-center justify-between">
-                <div className="flex items-center gap-1.5">
+              {/* Holiday accent bar */}
+              {holiday && !muted && (
+                <span
+                  className="pointer-events-none absolute left-0 top-0 h-full w-[2px] bg-gradient-to-b from-red-500/70 via-red-500/40 to-transparent"
+                  aria-hidden
+                />
+              )}
+
+              <div className="mb-1.5 flex items-center justify-between gap-1">
+                <div className="flex min-w-0 items-center gap-1.5">
                   <span
                     className={cn(
                       "flex h-6 min-w-6 items-center justify-center px-1.5 font-mono text-[11px]",
                       muted ? tone.muted : tone.text,
-                      isToday &&
-                        "rounded-full bg-accent !text-accent-fg",
+                      isToday && "rounded-full bg-accent !text-accent-fg",
                     )}
                   >
                     {fmt.day(d)}
                   </span>
                   {holiday && !muted && (
-                    <span className="hidden truncate text-[10px] text-red-500/90 sm:inline">
+                    <span
+                      className="truncate rounded-full bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium leading-none text-red-500 sm:text-[10px]"
+                      title={holiday}
+                    >
                       {holiday}
                     </span>
                   )}
                 </div>
-                {mood && <span className="text-[14px]">{mood}</span>}
+                {mood && <span className="shrink-0 text-[14px]">{mood}</span>}
               </div>
 
               <div className="flex flex-col gap-[3px] overflow-hidden">

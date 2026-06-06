@@ -9,6 +9,7 @@ import {
   isSameMonth,
   monthGridRange,
 } from "@/lib/date";
+import { isHoliday } from "@/lib/holidays";
 import type { EventDTO } from "@/types/calendar";
 
 type Props = {
@@ -74,15 +75,21 @@ function MiniMonth({
           const muted = !isSameMonth(d, monthDate);
           const isToday = isSameDay(d, today);
           const has = !muted && dayHasEvents(d, events);
+          const day = d.getDay();
+          const holiday = !muted && isHoliday(d);
+          const isSun = day === 0;
+          const isSat = day === 6;
           return (
             <span
               key={d.toISOString()}
               className={cn(
                 "relative mx-auto flex h-5 w-5 items-center justify-center font-mono text-[10px]",
                 muted ? "text-fg-subtle/50" : "text-fg-muted",
+                !muted && (holiday || isSun) && "text-red-500/90",
+                !muted && !holiday && isSat && "text-blue-500/90",
                 isToday &&
                   !muted &&
-                  "rounded-full bg-accent text-accent-fg",
+                  "rounded-full bg-accent !text-accent-fg",
               )}
             >
               {format(d, "d")}

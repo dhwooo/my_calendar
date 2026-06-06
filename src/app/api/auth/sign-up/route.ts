@@ -12,8 +12,8 @@ const schema = z.object({
     .regex(/^[a-z0-9_.-]+$/i, "영문/숫자/._-만 사용할 수 있어요"),
   pin: z
     .string()
-    .length(6)
-    .regex(/^\d{6}$/, "PIN은 숫자 6자리여야 합니다"),
+    .length(4)
+    .regex(/^\d{4}$/, "PIN은 숫자 4자리여야 합니다"),
 });
 
 export async function POST(req: Request) {
