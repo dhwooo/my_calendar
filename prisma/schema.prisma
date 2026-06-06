@@ -50,6 +50,9 @@ model User {
   passwordHash  String?
   // Google Calendar ICS (iCal) secret address — read-only subscribe URL.
   icalUrl       String?
+  // Notion Integration internal token + chosen workspace name (display).
+  notionToken     String?
+  notionWorkspace String?
 
   accounts  Account[]
   sessions  Session[]

@@ -128,8 +128,31 @@ export function Sidebar({
               />
               {refreshing ? "가져오는 중..." : "지금 새로고침"}
             </Button>
+            <button
+              onClick={async () => {
+                const res = await fetch("/api/calendar/ical/diagnose");
+                const j = await res.json();
+                alert(
+                  `[iCal 진단]\n\n` +
+                    `단계: ${j.step}\n` +
+                    (j.message ? `메시지: ${j.message}\n` : "") +
+                    (j.url ? `URL: ${j.url}\n` : "") +
+                    (j.status
+                      ? `HTTP: ${j.status} ${j.statusText}\n`
+                      : "") +
+                    (j.bytes ? `크기: ${j.bytes} bytes\n` : "") +
+                    (j.vEventCountRaw !== undefined
+                      ? `이벤트(raw): ${j.vEventCountRaw}\n파싱됨: ${j.vEventParsed}\n`
+                      : "") +
+                    (j.error ? `오류: ${j.error}` : ""),
+                );
+              }}
+              className="mt-1.5 w-full text-[10px] text-fg-muted underline-offset-2 hover:text-fg hover:underline"
+            >
+              연동 진단
+            </button>
             <p className="mt-2 font-mono text-[10px] leading-relaxed text-fg-subtle">
-              자동: 5분마다. 즉시 반영하려면 이 버튼.
+              자동: 5분마다. 즉시 반영하려면 위 버튼.
             </p>
           </div>
         )}
