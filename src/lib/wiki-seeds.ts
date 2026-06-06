@@ -701,10 +701,39 @@ firewall-cmd --reload
 };
 
 export async function seedLinuxMaster(userId: string) {
+  // 이미 동일 제목 페이지가 있으면 skip
   const existing = await prisma.wikiPage.findFirst({
     where: { userId, title: LINUX_MASTER_PLAN.title },
   });
   if (existing) return { ok: false, reason: "already seeded" };
+
+  // "공부" 부모 페이지 확보 — 없으면 생성, 있으면 재사용
+  let studyParent = await prisma.wikiPage.findFirst({
+    where: { userId, title: "공부", parentId: null },
+  });
+  if (!studyParent) {
+    studyParent = await prisma.wikiPage.create({
+      data: {
+        userId,
+        title: "공부",
+        icon: "📚",
+        content: `# 📚 공부
+
+자격증, 학습, 강의 노트를 모아두는 공간.
+
+## 현재 진행
+- [ ] 🐧 리눅스마스터 2급 2차 (실기)
+
+## 완료
+_아직 없음_
+
+---
+
+새 학습 주제는 이 페이지의 하위로 추가하세요.`,
+        parentId: null,
+      },
+    });
+  }
 
   async function create(page: SeedPage, parentId: string | null) {
     const created = await prisma.wikiPage.create({
@@ -723,6 +752,6 @@ export async function seedLinuxMaster(userId: string) {
     }
   }
 
-  await create(LINUX_MASTER_PLAN, null);
-  return { ok: true };
+  await create(LINUX_MASTER_PLAN, studyParent.id);
+  return { ok: true, studyParentId: studyParent.id };
 }
