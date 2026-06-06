@@ -19,6 +19,7 @@ import { DayView } from "@/components/calendar/DayView";
 import { YearView } from "@/components/calendar/YearView";
 import { EventModal } from "@/components/calendar/EventModal";
 import { EventDetailsPopup } from "@/components/calendar/EventDetailsPopup";
+import { DayPopup } from "@/components/calendar/DayPopup";
 import { DashboardRail } from "@/components/calendar/DashboardRail";
 import { Button } from "@/components/ui/button";
 import {
@@ -56,6 +57,7 @@ export function CalendarShell() {
   const [modalOpen, setModalOpen] = React.useState(false);
   const [editing, setEditing] = React.useState<EventDTO | null>(null);
   const [detail, setDetail] = React.useState<EventDTO | null>(null);
+  const [dayPopupDate, setDayPopupDate] = React.useState<Date | null>(null);
   const [syncing, setSyncing] = React.useState(false);
   const [navOpen, setNavOpen] = React.useState(false);
 
@@ -181,7 +183,7 @@ export function CalendarShell() {
                   events={events}
                   onSelectDay={(d) => {
                     setSelected(d);
-                    openCreate(d);
+                    setDayPopupDate(d);
                   }}
                   onSelectEvent={openDetail}
                 />
@@ -211,6 +213,22 @@ export function CalendarShell() {
           </div>
         </main>
       </div>
+
+      <DayPopup
+        open={!!dayPopupDate}
+        onOpenChange={(v) => !v && setDayPopupDate(null)}
+        date={dayPopupDate}
+        events={events}
+        onAdd={() => {
+          const d = dayPopupDate;
+          setDayPopupDate(null);
+          openCreate(d ?? undefined);
+        }}
+        onSelectEvent={(e) => {
+          setDayPopupDate(null);
+          openDetail(e);
+        }}
+      />
 
       <EventDetailsPopup
         open={!!detail}
