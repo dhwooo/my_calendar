@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button";
 import {
   createEvent,
   deleteEvent,
-  syncFromGoogle,
   updateEvent,
   useEvents,
 } from "@/hooks/useEvents";
@@ -59,7 +58,6 @@ export function CalendarShell() {
   const [editing, setEditing] = React.useState<EventDTO | null>(null);
   const [detail, setDetail] = React.useState<EventDTO | null>(null);
   const [dayPopupDate, setDayPopupDate] = React.useState<Date | null>(null);
-  const [syncing, setSyncing] = React.useState(false);
   const [navOpen, setNavOpen] = React.useState(false);
 
   const range = rangeForView(view, anchor);
@@ -105,16 +103,6 @@ export function CalendarShell() {
     setModalOpen(true);
   };
 
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      await syncFromGoogle(range);
-      await refresh();
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const sidebar = (
     <Sidebar
       anchor={anchor}
@@ -128,8 +116,6 @@ export function CalendarShell() {
         openCreate(selected);
         setNavOpen(false);
       }}
-      onSync={handleSync}
-      syncing={syncing}
       onRefreshIcal={refreshIcal}
     />
   );
