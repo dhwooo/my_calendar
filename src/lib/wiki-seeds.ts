@@ -701,13 +701,11 @@ firewall-cmd --reload
 };
 
 export async function seedLinuxMaster(userId: string) {
-  // 이미 동일 제목 페이지가 있으면 skip
   const existing = await prisma.wikiPage.findFirst({
     where: { userId, title: LINUX_MASTER_PLAN.title },
   });
-  if (existing) return { ok: false, reason: "already seeded" };
 
-  // "공부" 부모 페이지 확보 — 없으면 생성, 있으면 재사용
+  // "공부" 부모 페이지 확보
   let studyParent = await prisma.wikiPage.findFirst({
     where: { userId, title: "공부", parentId: null },
   });
@@ -721,18 +719,48 @@ export async function seedLinuxMaster(userId: string) {
 
 자격증, 학습, 강의 노트를 모아두는 공간.
 
+---
+
+새 학습 주제는 하위 페이지로 추가하세요.`,
+        parentId: null,
+      },
+    });
+  }
+
+  // "공부" 하위 "자격증" 확보
+  let certParent = await prisma.wikiPage.findFirst({
+    where: { userId, title: "자격증", parentId: studyParent.id },
+  });
+  if (!certParent) {
+    certParent = await prisma.wikiPage.create({
+      data: {
+        userId,
+        title: "자격증",
+        icon: "🏅",
+        content: `# 🏅 자격증
+
+응시 예정 / 학습 중인 자격증 모음.
+
 ## 현재 진행
 - [ ] 🐧 리눅스마스터 2급 2차 (실기)
 
 ## 완료
-_아직 없음_
-
----
-
-새 학습 주제는 이 페이지의 하위로 추가하세요.`,
-        parentId: null,
+_아직 없음_`,
+        parentId: studyParent.id,
       },
     });
+  }
+
+  // 이미 만들어진 페이지가 있으면 자격증 하위로 이동만 하고 종료
+  if (existing) {
+    if (existing.parentId !== certParent.id) {
+      await prisma.wikiPage.update({
+        where: { id: existing.id },
+        data: { parentId: certParent.id },
+      });
+      return { ok: true, moved: true, certParentId: certParent.id };
+    }
+    return { ok: false, reason: "already seeded" };
   }
 
   async function create(page: SeedPage, parentId: string | null) {
@@ -752,6 +780,6 @@ _아직 없음_
     }
   }
 
-  await create(LINUX_MASTER_PLAN, studyParent.id);
-  return { ok: true, studyParentId: studyParent.id };
+  await create(LINUX_MASTER_PLAN, certParent.id);
+  return { ok: true, studyParentId: studyParent.id, certParentId: certParent.id };
 }
