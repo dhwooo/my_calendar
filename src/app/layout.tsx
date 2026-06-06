@@ -6,13 +6,17 @@ import { Providers } from "@/components/Providers";
 import { PWARegistrar } from "@/components/PWARegistrar";
 
 export const metadata: Metadata = {
-  title: "dhwoo · calendar",
-  description: "ChatGPT Codex 풍의 정제된 캘린더. 일정 · 체중 · 자산 · 갤러리 · 위키.",
+  title: "Private Calendar",
+  description: "Codex × Apple 풍의 정제된 개인 캘린더. 일정 · 체중 · 자산 · 갤러리 · 위키.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    title: "dhwoo",
+    title: "Prv. CAL",
     statusBarStyle: "default",
+  },
+  icons: {
+    icon: "/icons/icon.svg",
+    apple: "/icons/icon.svg",
   },
 };
 
