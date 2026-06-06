@@ -3,6 +3,9 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 /**
  * ICS 구독 디버그 — URL이 잘 들어왔는지 / fetch가 되는지 / 파싱 결과가 어떤지.
  */
@@ -48,23 +51,9 @@ export async function GET() {
   const lines = ics.split("\n").length;
   const vEventCount = (ics.match(/BEGIN:VEVENT/g) ?? []).length;
 
-  let parsedCount = 0;
-  try {
-    const { default: ical } = await import("node-ical");
-    const parsed = ical.sync.parseICS(ics);
-    parsedCount = Object.values(parsed).filter(
-      (i) => (i as { type?: string })?.type === "VEVENT",
-    ).length;
-  } catch (err) {
-    return NextResponse.json({
-      step: "parse-failed",
-      url: urlPreview,
-      bytes: ics.length,
-      lines,
-      vEventCount,
-      error: String(err),
-    });
-  }
+  // 직접 정규식 기반 파서 (node-ical의 BigInt 이슈 회피)
+  const unfolded = ics.replace(/\r\n[ \t]/g, "").replace(/\n[ \t]/g, "");
+  const parsedCount = (unfolded.match(/^BEGIN:VEVENT/gm) ?? []).length;
 
   return NextResponse.json({
     step: "ok",
