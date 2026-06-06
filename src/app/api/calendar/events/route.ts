@@ -4,6 +4,7 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { pushCreate } from "@/lib/sync";
+import { fetchIcalEvents } from "@/lib/ical";
 
 const inputSchema = z.object({
   title: z.string().min(1),
@@ -24,21 +25,38 @@ export async function GET(req: Request) {
   const to = searchParams.get("to");
   if (!from || !to) return new NextResponse("from/to required", { status: 400 });
 
-  const events = await prisma.event.findMany({
-    where: {
-      userId: session.user.id,
-      start: { lte: new Date(to) },
-      end: { gte: new Date(from) },
-    },
-    orderBy: { start: "asc" },
-  });
+  const fromDate = new Date(from);
+  const toDate = new Date(to);
+
+  const [events, user] = await Promise.all([
+    prisma.event.findMany({
+      where: {
+        userId: session.user.id,
+        start: { lte: toDate },
+        end: { gte: fromDate },
+      },
+      orderBy: { start: "asc" },
+    }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { icalUrl: true },
+    }),
+  ]);
+
+  const localEvents = events.map((e) => ({
+    ...e,
+    start: e.start.toISOString(),
+    end: e.end.toISOString(),
+  }));
+
+  const icalEvents = user?.icalUrl
+    ? await fetchIcalEvents(user.icalUrl, { start: fromDate, end: toDate })
+    : [];
 
   return NextResponse.json({
-    events: events.map((e) => ({
-      ...e,
-      start: e.start.toISOString(),
-      end: e.end.toISOString(),
-    })),
+    events: [...localEvents, ...icalEvents].sort(
+      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+    ),
   });
 }
 

@@ -95,17 +95,8 @@ export function MonthView({
                 row < 5 && "border-b border-border/60",
                 muted && "bg-bg-subtle/30",
                 isSel && "bg-bg-subtle/80",
-                holiday && !muted && "bg-red-500/[0.035] hover:bg-red-500/[0.06]",
               )}
             >
-              {/* Holiday accent bar */}
-              {holiday && !muted && (
-                <span
-                  className="pointer-events-none absolute left-0 top-0 h-full w-[2px] bg-gradient-to-b from-red-500/70 via-red-500/40 to-transparent"
-                  aria-hidden
-                />
-              )}
-
               <div className="mb-1.5 flex items-center justify-between gap-1">
                 <div className="flex min-w-0 items-center gap-1.5">
                   <span

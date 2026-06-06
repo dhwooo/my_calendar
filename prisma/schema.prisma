@@ -48,6 +48,8 @@ model User {
   username      String?   @unique
   // PIN hash (bcrypt). Null for OAuth-only users.
   passwordHash  String?
+  // Google Calendar ICS (iCal) secret address — read-only subscribe URL.
+  icalUrl       String?
 
   accounts  Account[]
   sessions  Session[]

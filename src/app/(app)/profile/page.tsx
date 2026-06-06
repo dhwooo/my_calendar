@@ -12,6 +12,7 @@ export default async function ProfilePage() {
       username: true,
       image: true,
       email: true,
+      icalUrl: true,
     },
   });
   const google = await prisma.account.findFirst({
@@ -26,6 +27,7 @@ export default async function ProfilePage() {
       username: null,
       image: null,
       email: null,
+      icalUrl: null,
     },
     googleConnected: !!google,
   };

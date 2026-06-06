@@ -16,6 +16,7 @@ export type Profile = {
     username: string | null;
     image: string | null;
     email: string | null;
+    icalUrl: string | null;
   };
   googleConnected: boolean;
 };
@@ -52,6 +53,23 @@ export function ProfileClient({
   React.useEffect(() => {
     if (data?.user.name) setName(data.user.name);
   }, [data?.user.name]);
+
+  const [icalUrl, setIcalUrl] = React.useState("");
+  const [icalSaving, setIcalSaving] = React.useState(false);
+  React.useEffect(() => {
+    if (data?.user.icalUrl !== undefined) setIcalUrl(data.user.icalUrl ?? "");
+  }, [data?.user.icalUrl]);
+
+  async function saveIcalUrl(next: string | null) {
+    setIcalSaving(true);
+    await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ icalUrl: next }),
+    });
+    setIcalSaving(false);
+    await mutate();
+  }
 
   async function saveName() {
     if (!name.trim()) return;
@@ -145,10 +163,58 @@ export function ProfileClient({
         </div>
       </div>
 
+      {/* ICS subscribe (read-only) */}
       <div className="rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[14px] font-medium text-fg">
-            Google Calendar
+            Google Calendar 자동 연동 (ICS)
+          </span>
+          <span
+            className={
+              data?.user.icalUrl
+                ? "font-mono text-[10px] text-emerald-600"
+                : "font-mono text-[10px] text-fg-subtle"
+            }
+          >
+            {data?.user.icalUrl ? "● 구독 중" : "○ 미설정"}
+          </span>
+        </div>
+        <p className="mb-3 font-mono text-[10px] leading-relaxed text-fg-subtle">
+          Google Calendar → 설정 → 캘린더 통합 → <b>비공개 iCal 주소</b> 복사 후 붙여넣기.
+          5분마다 자동 갱신되며 읽기 전용으로 캘린더에 표시됩니다.
+        </p>
+        <div className="flex gap-2">
+          <Input
+            placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+            value={icalUrl}
+            onChange={(e) => setIcalUrl(e.target.value)}
+            className="h-10 flex-1 rounded-xl text-[12px]"
+          />
+          <Button
+            onClick={() => saveIcalUrl(icalUrl.trim() || null)}
+            disabled={icalSaving || icalUrl === (data?.user.icalUrl ?? "")}
+            className="h-10 rounded-xl"
+          >
+            저장
+          </Button>
+        </div>
+        {data?.user.icalUrl && (
+          <button
+            onClick={() => {
+              setIcalUrl("");
+              saveIcalUrl(null);
+            }}
+            className="mt-2 text-[11px] text-fg-muted underline-offset-4 hover:text-red-500 hover:underline"
+          >
+            구독 해제
+          </button>
+        )}
+      </div>
+
+      <div className="mt-5 rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
+        <div className="mb-1 flex items-center justify-between">
+          <span className="text-[14px] font-medium text-fg">
+            Google Calendar (OAuth · 양방향)
           </span>
           <span
             className={

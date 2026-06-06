@@ -8,6 +8,12 @@ import { newImageFilename, uploadImage } from "@/lib/storage";
 const schema = z.object({
   name: z.string().min(1).max(40).optional(),
   imageDataUrl: z.string().startsWith("data:image/").optional(),
+  icalUrl: z
+    .string()
+    .url()
+    .max(2000)
+    .nullable()
+    .optional(),
 });
 
 export async function GET() {
@@ -16,7 +22,14 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { id: true, name: true, username: true, image: true, email: true },
+    select: {
+      id: true,
+      name: true,
+      username: true,
+      image: true,
+      email: true,
+      icalUrl: true,
+    },
   });
   const google = await prisma.account.findFirst({
     where: { userId: session.user.id, provider: "google" },
@@ -33,8 +46,9 @@ export async function PATCH(req: Request) {
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "잘못된 입력" }, { status: 400 });
 
-  const updates: { name?: string; image?: string } = {};
+  const updates: { name?: string; image?: string; icalUrl?: string | null } = {};
   if (parsed.data.name) updates.name = parsed.data.name;
+  if (parsed.data.icalUrl !== undefined) updates.icalUrl = parsed.data.icalUrl;
 
   if (parsed.data.imageDataUrl) {
     const match = parsed.data.imageDataUrl.match(
