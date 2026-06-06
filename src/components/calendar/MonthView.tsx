@@ -94,7 +94,7 @@ export function MonthView({
               key={d.toISOString()}
               onClick={() => onSelectDay(d)}
               className={cn(
-                "group relative flex min-h-[96px] sm:min-h-[112px] flex-col items-stretch p-2 text-left transition",
+                "group relative flex min-h-[96px] sm:min-h-[112px] flex-col items-stretch p-1 text-left transition sm:p-2",
                 "hover:bg-bg-subtle/60",
                 col < 6 && "border-r border-border/60",
                 row < 5 && "border-b border-border/60",
@@ -126,7 +126,7 @@ export function MonthView({
                 </div>
               )}
 
-              <div className="flex flex-col gap-[3px] overflow-hidden">
+              <div className="flex min-w-0 flex-col gap-[2px] overflow-hidden">
                 {dayEvents.slice(0, 3).map((e) => (
                   <span
                     key={e.id}
@@ -134,20 +134,20 @@ export function MonthView({
                       ev.stopPropagation();
                       onSelectEvent(e);
                     }}
-                    className="flex items-center gap-1.5 truncate rounded-md px-1.5 py-0.5 text-[11px] text-fg transition hover:bg-bg-muted"
+                    className="flex min-w-0 items-center gap-1 rounded-md bg-accent/10 px-1 py-0.5 text-[10px] text-fg transition hover:bg-accent/20 sm:gap-1.5 sm:bg-transparent sm:px-1.5 sm:text-[11px] sm:hover:bg-bg-muted"
                   >
-                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                    <span className="hidden h-1.5 w-1.5 shrink-0 rounded-full bg-accent sm:block" />
                     {!e.allDay && (
-                      <span className="font-mono text-[10px] text-fg-subtle">
+                      <span className="hidden font-mono text-[10px] text-fg-subtle sm:inline">
                         {fmt.time(new Date(e.start))}
                       </span>
                     )}
-                    <span className="truncate">{e.title}</span>
+                    <span className="min-w-0 flex-1 truncate">{e.title}</span>
                   </span>
                 ))}
                 {dayEvents.length > 3 && (
-                  <span className="pl-2 font-mono text-[10px] text-fg-subtle">
-                    +{dayEvents.length - 3}개 더
+                  <span className="pl-1 font-mono text-[9px] text-fg-subtle sm:pl-2 sm:text-[10px]">
+                    +{dayEvents.length - 3}
                   </span>
                 )}
               </div>

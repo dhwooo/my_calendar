@@ -68,7 +68,14 @@ function parseVEvents(ics: string): RawEvent[] {
       continue;
     }
     if (line === "END:VEVENT") {
-      if (cur) events.push(cur);
+      if (cur) {
+        // ICS DTEND은 EXCLUSIVE — 종일 이벤트의 경우 마지막 날 +1로 들어옴.
+        // 표시 목적상 마지막 날 23:59:59로 끌어내려서 추가 날짜로 새지 않게 한다.
+        if (cur.allDay && cur.end) {
+          cur.end = new Date(cur.end.getTime() - 1);
+        }
+        events.push(cur);
+      }
       cur = null;
       continue;
     }
