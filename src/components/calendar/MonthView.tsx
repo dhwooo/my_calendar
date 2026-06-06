@@ -97,28 +97,29 @@ export function MonthView({
                 isSel && "bg-bg-subtle/80",
               )}
             >
-              <div className="mb-1.5 flex items-center justify-between gap-1">
-                <div className="flex min-w-0 items-center gap-1.5">
-                  <span
-                    className={cn(
-                      "flex h-6 min-w-6 items-center justify-center px-1.5 font-mono text-[11px]",
-                      muted ? tone.muted : tone.text,
-                      isToday && "rounded-full bg-accent !text-accent-fg",
-                    )}
-                  >
-                    {fmt.day(d)}
-                  </span>
-                  {holiday && !muted && (
-                    <span
-                      className="truncate rounded-full bg-red-500/10 px-1.5 py-0.5 text-[9px] font-medium leading-none text-red-500 sm:text-[10px]"
-                      title={holiday}
-                    >
-                      {holiday}
-                    </span>
+              <div className="mb-1 flex items-center justify-between gap-1">
+                <span
+                  className={cn(
+                    "flex h-6 min-w-6 items-center justify-center px-1.5 font-mono text-[11px]",
+                    muted ? tone.muted : tone.text,
+                    isToday && "rounded-full bg-accent !text-accent-fg",
                   )}
-                </div>
+                >
+                  {fmt.day(d)}
+                </span>
                 {mood && <span className="shrink-0 text-[14px]">{mood}</span>}
               </div>
+
+              {holiday && !muted && (
+                <div className="mb-1 flex">
+                  <span
+                    className="truncate rounded-md bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium leading-tight text-red-500"
+                    title={holiday}
+                  >
+                    {holiday}
+                  </span>
+                </div>
+              )}
 
               <div className="flex flex-col gap-[3px] overflow-hidden">
                 {dayEvents.slice(0, 3).map((e) => (
