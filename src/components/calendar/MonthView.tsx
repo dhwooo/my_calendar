@@ -38,7 +38,7 @@ function eventsOn(day: Date, events: EventDTO[]) {
   return events.filter((e) => {
     const es = new Date(e.start);
     const ee = new Date(e.end);
-    return es <= end && ee >= start;
+    return es <= end && ee > start;
   });
 }
 

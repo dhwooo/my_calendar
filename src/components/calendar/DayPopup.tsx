@@ -47,7 +47,7 @@ export function DayPopup({
       start.setHours(0, 0, 0, 0);
       const end = new Date(date);
       end.setHours(23, 59, 59, 999);
-      return es <= end && ee >= start;
+      return es <= end && ee > start;
     })
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
