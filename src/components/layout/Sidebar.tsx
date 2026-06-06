@@ -1,8 +1,8 @@
 "use client";
 
 import * as React from "react";
-import useSWR from "swr";
-import { Plus, RefreshCw } from "lucide-react";
+import useSWR, { mutate } from "swr";
+import { Plus, RefreshCw, Target, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DraggablePopup } from "@/components/ui/DraggablePopup";
 import { cn } from "@/lib/utils";
@@ -107,7 +107,11 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="mt-auto space-y-3">
+      <div className="flex-1 space-y-3 overflow-y-auto">
+        <GoalsPanel anchor={anchor} />
+      </div>
+
+      <div className="space-y-3">
         {hasIcal && onRefreshIcal && (
           <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
             <div className="mb-1 flex items-center justify-between">
@@ -238,6 +242,143 @@ function DiagnoseBody({ diag }: { diag: DiagnoseResult }) {
         <p className="mt-2 rounded-md bg-fg/5 p-2 text-[11px] leading-relaxed text-fg-muted">
           {hint}
         </p>
+      )}
+    </div>
+  );
+}
+
+type Goal = { id: string; year: number; month: number | null; text: string; done: boolean };
+
+function GoalsPanel({ anchor }: { anchor: Date }) {
+  const year = anchor.getFullYear();
+  const month = anchor.getMonth() + 1;
+  const key = `/api/goals?year=${year}`;
+  const { data } = useSWR<{ goals: Goal[] }>(key);
+  const yearGoals = (data?.goals ?? []).filter((g) => g.month === null);
+  const monthGoals = (data?.goals ?? []).filter((g) => g.month === month);
+  return (
+    <>
+      <GoalCard
+        title={`${year}년 목표`}
+        sub="year"
+        goals={yearGoals}
+        year={year}
+        month={null}
+        cacheKey={key}
+      />
+      <GoalCard
+        title={`${month}월 목표`}
+        sub="month"
+        goals={monthGoals}
+        year={year}
+        month={month}
+        cacheKey={key}
+      />
+    </>
+  );
+}
+
+function GoalCard({
+  title,
+  sub,
+  goals,
+  year,
+  month,
+  cacheKey,
+}: {
+  title: string;
+  sub: string;
+  goals: Goal[];
+  year: number;
+  month: number | null;
+  cacheKey: string;
+}) {
+  const [text, setText] = React.useState("");
+  const done = goals.filter((g) => g.done).length;
+  const add = async () => {
+    const v = text.trim();
+    if (!v) return;
+    setText("");
+    await fetch("/api/goals", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ year, month, text: v }),
+    });
+    mutate(cacheKey);
+  };
+  const toggle = async (g: Goal) => {
+    await fetch(`/api/goals/${g.id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ done: !g.done }),
+    });
+    mutate(cacheKey);
+  };
+  const remove = async (g: Goal) => {
+    await fetch(`/api/goals/${g.id}`, { method: "DELETE" });
+    mutate(cacheKey);
+  };
+  return (
+    <div className="rounded-2xl border border-border/60 bg-bg-subtle/30 p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Target className="h-3 w-3 text-fg-muted" />
+          <span className="text-[11px] font-medium text-fg">{title}</span>
+        </div>
+        <span className="font-mono text-[9px] uppercase tracking-wider text-fg-subtle">
+          {sub} {goals.length > 0 && `· ${done}/${goals.length}`}
+        </span>
+      </div>
+      <div className="mb-1.5 flex gap-1.5">
+        <input
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && add()}
+          placeholder="추가"
+          className="h-7 flex-1 rounded-md border border-border/60 bg-bg px-2 text-[11px] outline-none focus:border-accent/60"
+        />
+        <button
+          onClick={add}
+          className="rounded-md border border-border/60 px-1.5 text-fg-muted hover:bg-bg-muted hover:text-fg"
+          aria-label="추가"
+        >
+          <Plus className="h-3 w-3" />
+        </button>
+      </div>
+      {goals.length === 0 ? (
+        <p className="px-1 py-0.5 font-mono text-[9px] text-fg-subtle">
+          비어 있음
+        </p>
+      ) : (
+        <ul className="space-y-0.5">
+          {goals.map((g) => (
+            <li key={g.id} className="group flex items-start gap-1.5 rounded-md px-1 py-1 hover:bg-bg-muted">
+              <button
+                onClick={() => toggle(g)}
+                className={cn(
+                  "mt-0.5 flex h-3 w-3 shrink-0 items-center justify-center rounded border",
+                  g.done ? "border-accent bg-accent text-accent-fg" : "border-border",
+                )}
+              >
+                {g.done && (
+                  <svg viewBox="0 0 20 20" className="h-2.5 w-2.5">
+                    <path d="M5 10.5l3.5 3.5L15 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                  </svg>
+                )}
+              </button>
+              <span className={cn("flex-1 text-[11px] leading-relaxed", g.done ? "text-fg-subtle line-through" : "text-fg")}>
+                {g.text}
+              </span>
+              <button
+                onClick={() => remove(g)}
+                className="rounded-sm p-0.5 text-fg-subtle opacity-0 hover:text-red-500 group-hover:opacity-100"
+                aria-label="삭제"
+              >
+                <Trash2 className="h-2.5 w-2.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
       )}
     </div>
   );

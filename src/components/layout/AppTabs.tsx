@@ -6,7 +6,6 @@ import {
   BookText,
   CalendarDays,
   ImageIcon,
-  LayoutDashboard,
   ScaleIcon,
   Wallet,
 } from "lucide-react";
@@ -19,8 +18,7 @@ type Tab = {
 };
 
 const TABS: Tab[] = [
-  { href: "/dashboard", label: "대시보드", icon: LayoutDashboard },
-  { href: "/calendar", label: "캘린더", icon: CalendarDays },
+  { href: "/calendar", label: "대시보드", icon: CalendarDays },
   { href: "/wiki", label: "위키", icon: BookText },
   { href: "/weight", label: "체중", icon: ScaleIcon },
   { href: "/assets", label: "자산", icon: Wallet },
@@ -60,7 +58,7 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-bg/85 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="mx-auto grid max-w-md grid-cols-6">
+      <div className="mx-auto grid max-w-md grid-cols-5">
         {TABS.map((t) => {
           const active = pathname?.startsWith(t.href);
           return (

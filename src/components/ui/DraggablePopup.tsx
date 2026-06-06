@@ -93,14 +93,16 @@ export function DraggablePopup({
     >
       <div
         onPointerDown={(e) => {
-          (e.target as Element).setPointerCapture?.(e.pointerId);
+          if ((e.target as HTMLElement).closest("[data-no-drag]")) return;
+          e.preventDefault();
           dragRef.current = {
             dx: e.clientX - pos.x,
             dy: e.clientY - pos.y,
           };
           document.body.style.userSelect = "none";
         }}
-        className="flex cursor-grab items-center gap-2 rounded-t-2xl border-b border-border/60 bg-bg-subtle/60 px-4 py-2.5 active:cursor-grabbing"
+        style={{ touchAction: "none" }}
+        className="flex cursor-grab select-none items-center gap-2 rounded-t-2xl border-b border-border/60 bg-bg-subtle/60 px-4 py-2.5 active:cursor-grabbing"
       >
         <GripHorizontal className="h-3.5 w-3.5 text-fg-subtle" />
         <span
@@ -113,8 +115,8 @@ export function DraggablePopup({
           {title}
         </span>
         <button
+          data-no-drag
           onClick={onClose}
-          onPointerDown={(e) => e.stopPropagation()}
           className="rounded-md p-1 text-fg-muted hover:bg-bg-muted hover:text-fg"
         >
           <X className="h-3.5 w-3.5" />
