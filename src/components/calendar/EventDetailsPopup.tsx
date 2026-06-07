@@ -12,6 +12,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { getHoliday } from "@/lib/holidays";
@@ -52,9 +54,12 @@ export function EventDetailsPopup({
           {event.mood && (
             <div className="mb-2 text-[44px] leading-none">{event.mood}</div>
           )}
-          <h2 className="text-[22px] font-semibold leading-tight tracking-tight text-fg">
+          <DialogTitle className="text-[22px] font-semibold leading-tight tracking-tight text-fg">
             {event.title}
-          </h2>
+          </DialogTitle>
+          <DialogDescription className="sr-only">
+            이벤트 상세 정보
+          </DialogDescription>
           {holiday && (
             <span className="mt-2 inline-block rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-500">
               {holiday}
