@@ -25,12 +25,20 @@ const EMOJIS = [
   "🐧", "🏅", "🌐", "⚙️", "📋", "🎉", "🥗", "🛠️",
 ];
 
+type ChildPage = { id: string; title: string; icon: string | null };
+
 export function WikiEditor({
   id,
   onMutateTree,
+  children,
+  onSelectChild,
+  onAddChild,
 }: {
   id: string;
   onMutateTree: () => void;
+  children?: ChildPage[];
+  onSelectChild?: (id: string) => void;
+  onAddChild?: (parentId: string) => void;
 }) {
   const { data } = useSWR<{ page: FullPage }>(`/api/wiki/${id}`);
   const [title, setTitle] = React.useState("");

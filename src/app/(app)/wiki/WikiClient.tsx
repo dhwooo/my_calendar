@@ -66,20 +66,19 @@ export function WikiClient({
 
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
 
-  // activeId 변경 시 조상 페이지 모두 자동 expand → 사이드바 트리에서 현재 위치 보이도록
+  // activeId 변경 시 (자기 자신 + 조상) 자동 expand → 현재 페이지의 하위와 위치까지 트리에서 보이도록
   React.useEffect(() => {
     if (!activeId) return;
-    const ancestors = new Set<string>();
+    const toExpand = new Set<string>([activeId]);
     let cur = pages.find((p) => p.id === activeId)?.parentId ?? null;
     while (cur) {
-      ancestors.add(cur);
+      toExpand.add(cur);
       cur = pages.find((p) => p.id === cur)?.parentId ?? null;
     }
-    if (ancestors.size === 0) return;
     setExpanded((prev) => {
       const next = new Set(prev);
       let changed = false;
-      ancestors.forEach((a) => {
+      toExpand.forEach((a) => {
         if (!next.has(a)) {
           next.add(a);
           changed = true;
