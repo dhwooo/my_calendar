@@ -107,58 +107,6 @@ export function Sidebar({
         </div>
       </div>
 
-      <div className="mt-auto space-y-3">
-        {hasIcal && onRefreshIcal && (
-          <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <div className="mb-1 flex items-center justify-between">
-              <span className="text-[12px] font-medium text-fg">
-                iCal 구독
-              </span>
-              <span className="font-mono text-[10px] text-emerald-600">
-                ● 활성
-              </span>
-            </div>
-            <Button
-              variant="outline"
-              className="mt-2 h-8 w-full justify-center gap-2 rounded-lg text-[12px]"
-              onClick={async () => {
-                setRefreshing(true);
-                try {
-                  await onRefreshIcal();
-                } finally {
-                  setRefreshing(false);
-                }
-              }}
-              disabled={refreshing}
-            >
-              <RefreshCw
-                className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
-              />
-              {refreshing ? "가져오는 중..." : "지금 새로고침"}
-            </Button>
-            <button
-              onClick={async () => {
-                setDiagLoading(true);
-                try {
-                  const res = await fetch("/api/calendar/ical/diagnose");
-                  const j = (await res.json()) as DiagnoseResult;
-                  setDiag(j);
-                } finally {
-                  setDiagLoading(false);
-                }
-              }}
-              disabled={diagLoading}
-              className="mt-1.5 w-full text-[10px] text-fg-muted underline-offset-2 hover:text-fg hover:underline disabled:opacity-50"
-            >
-              {diagLoading ? "진단 중..." : "연동 진단"}
-            </button>
-            <p className="mt-2 font-mono text-[10px] leading-relaxed text-fg-subtle">
-              자동: 5분마다. 즉시 반영하려면 위 버튼.
-            </p>
-          </div>
-        )}
-
-      </div>
 
       <DraggablePopup
         open={!!diag}

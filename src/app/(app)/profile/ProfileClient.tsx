@@ -7,6 +7,7 @@ import { Bell, BellOff, Camera, Link2, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DraggablePopup } from "@/components/ui/DraggablePopup";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 export type Profile = {
@@ -55,6 +56,12 @@ export function ProfileClient({
   }, [data?.user.name]);
 
   const [icalUrl, setIcalUrl] = React.useState("");
+  const [icalRefreshing, setIcalRefreshing] = React.useState(false);
+  const [icalDiagLoading, setIcalDiagLoading] = React.useState(false);
+  const [icalDiag, setIcalDiag] = React.useState<{
+    step: string;
+    [k: string]: unknown;
+  } | null>(null);
   const [icalSaving, setIcalSaving] = React.useState(false);
   React.useEffect(() => {
     if (data?.user.icalUrl !== undefined) setIcalUrl(data.user.icalUrl ?? "");
@@ -199,17 +206,73 @@ export function ProfileClient({
           </Button>
         </div>
         {data?.user.icalUrl && (
-          <button
-            onClick={() => {
-              setIcalUrl("");
-              saveIcalUrl(null);
-            }}
-            className="mt-2 text-[11px] text-fg-muted underline-offset-4 hover:text-red-500 hover:underline"
-          >
-            구독 해제
-          </button>
+          <>
+            <div className="mt-3 flex gap-2">
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setIcalRefreshing(true);
+                  try {
+                    await fetch(
+                      `/api/calendar/ical?from=${new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1).toISOString()}&to=${new Date(new Date().getFullYear(), new Date().getMonth() + 2, 1).toISOString()}&refresh=1`,
+                    );
+                  } finally {
+                    setIcalRefreshing(false);
+                  }
+                }}
+                disabled={icalRefreshing}
+                className="h-9 flex-1 gap-2 rounded-xl text-[12px]"
+              >
+                {icalRefreshing ? "새로고침 중..." : "지금 새로고침"}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={async () => {
+                  setIcalDiagLoading(true);
+                  try {
+                    const res = await fetch("/api/calendar/ical/diagnose");
+                    const j = await res.json();
+                    setIcalDiag(j);
+                  } finally {
+                    setIcalDiagLoading(false);
+                  }
+                }}
+                disabled={icalDiagLoading}
+                className="h-9 rounded-xl px-3 text-[12px]"
+              >
+                {icalDiagLoading ? "진단 중..." : "연동 진단"}
+              </Button>
+            </div>
+            <button
+              onClick={() => {
+                setIcalUrl("");
+                saveIcalUrl(null);
+              }}
+              className="mt-2 text-[11px] text-fg-muted underline-offset-4 hover:text-red-500 hover:underline"
+            >
+              구독 해제
+            </button>
+          </>
         )}
       </div>
+      <DraggablePopup
+        open={!!icalDiag}
+        onClose={() => setIcalDiag(null)}
+        title={`iCal 진단 — ${icalDiag?.step ?? ""}`}
+        tone={
+          icalDiag?.step === "ok"
+            ? "success"
+            : icalDiag?.step === "no-url"
+              ? "warning"
+              : "error"
+        }
+      >
+        {icalDiag && (
+          <pre className="whitespace-pre-wrap break-all font-mono text-[11px] text-fg">
+            {JSON.stringify(icalDiag, null, 2)}
+          </pre>
+        )}
+      </DraggablePopup>
 
       <div className="mt-5 rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
         <div className="mb-1 flex items-center justify-between">
