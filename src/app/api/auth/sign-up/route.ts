@@ -17,11 +17,11 @@ const schema = z.object({
 });
 
 export async function POST(req: Request) {
-  // SINGLE-USER ENFORCEMENT: once a user exists, sign-up is closed forever.
+  // TWO-USER ENFORCEMENT: 두 명까지 가입 가능 (공용 게시판 사용).
   const existingCount = await prisma.user.count();
-  if (existingCount > 0) {
+  if (existingCount >= 2) {
     return NextResponse.json(
-      { error: "가입이 마감되었습니다." },
+      { error: "가입 인원(2명)이 모두 찼습니다." },
       { status: 403 },
     );
   }

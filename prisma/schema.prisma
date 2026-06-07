@@ -66,6 +66,49 @@ model User {
   pushSubs  PushSubscription[]
   todos     Todo[]
   goals     Goal[]
+  posts     Post[]
+  postComments PostComment[]
+}
+
+// --- 공용 게시판 (두 사용자 공유) ---
+model Post {
+  id        String   @id @default(cuid())
+  authorId  String
+  content   String   @default("")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author   User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  images   PostImage[]
+  comments PostComment[]
+
+  @@index([createdAt])
+}
+
+model PostImage {
+  id     String @id @default(cuid())
+  postId String
+  url    String
+  width  Int?
+  height Int?
+  order  Int    @default(0)
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  authorId  String
+  content   String
+  createdAt DateTime @default(now())
+
+  post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
 // --- Dashboard: daily TODO + year/month goals ---

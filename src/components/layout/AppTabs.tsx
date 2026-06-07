@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookText,
   CalendarDays,
-  ImageIcon,
+  MessageCircle,
   ScaleIcon,
   Target,
   Wallet,
@@ -24,7 +24,7 @@ const TABS: Tab[] = [
   { href: "/goals", label: "목표", icon: Target },
   { href: "/weight", label: "체중", icon: ScaleIcon },
   { href: "/assets", label: "자산", icon: Wallet },
-  { href: "/gallery", label: "갤러리", icon: ImageIcon },
+  { href: "/board", label: "게시판", icon: MessageCircle },
 ];
 
 export function DesktopTabs() {
