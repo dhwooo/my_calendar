@@ -16,7 +16,7 @@ type Props = {
   anchor: Date;
   selected: Date;
   events: EventDTO[];
-  weightByDate?: Map<string, number>;
+  weightByDate?: Map<string, { kg: number; delta: number | null }>;
   onSelectDay: (d: Date) => void;
   onSelectEvent: (e: EventDTO) => void;
 };
@@ -80,7 +80,9 @@ export function MonthView({
             .pop();
 
           const dayKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-          const weight = weightByDate?.get(dayKey);
+          const weightInfo = weightByDate?.get(dayKey);
+          const weight = weightInfo?.kg;
+          const weightDelta = weightInfo?.delta ?? null;
 
           return (
             <button
@@ -154,12 +156,28 @@ export function MonthView({
               })()}
 
               {weight !== undefined && !muted && (
-                <span
-                  className="mt-1 self-end rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted"
-                  title="체중"
-                >
-                  {weight.toFixed(1)}kg
-                </span>
+                <div className="mt-1 flex items-center justify-end gap-1">
+                  {weightDelta !== null && Math.abs(weightDelta) >= 0.05 && (
+                    <span
+                      className={cn(
+                        "rounded-md px-1 py-0.5 font-mono text-[9px] tabular-nums",
+                        weightDelta > 0
+                          ? "bg-red-500/10 text-red-500"
+                          : "bg-emerald-500/10 text-emerald-600",
+                      )}
+                      title="전날 대비"
+                    >
+                      {weightDelta > 0 ? "+" : ""}
+                      {weightDelta.toFixed(1)}
+                    </span>
+                  )}
+                  <span
+                    className="rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted"
+                    title="체중"
+                  >
+                    {weight.toFixed(1)}kg
+                  </span>
+                </div>
               )}
             </button>
           );

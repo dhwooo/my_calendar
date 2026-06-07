@@ -14,6 +14,7 @@ const schema = z.object({
     .max(2000)
     .nullable()
     .optional(),
+  targetWeightKg: z.number().min(20).max(300).nullable().optional(),
 });
 
 export async function GET() {
@@ -29,6 +30,7 @@ export async function GET() {
       image: true,
       email: true,
       icalUrl: true,
+      targetWeightKg: true,
     },
   });
   const google = await prisma.account.findFirst({
@@ -46,9 +48,16 @@ export async function PATCH(req: Request) {
   const parsed = schema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "잘못된 입력" }, { status: 400 });
 
-  const updates: { name?: string; image?: string; icalUrl?: string | null } = {};
+  const updates: {
+    name?: string;
+    image?: string;
+    icalUrl?: string | null;
+    targetWeightKg?: number | null;
+  } = {};
   if (parsed.data.name) updates.name = parsed.data.name;
   if (parsed.data.icalUrl !== undefined) updates.icalUrl = parsed.data.icalUrl;
+  if (parsed.data.targetWeightKg !== undefined)
+    updates.targetWeightKg = parsed.data.targetWeightKg;
 
   if (parsed.data.imageDataUrl) {
     const match = parsed.data.imageDataUrl.match(

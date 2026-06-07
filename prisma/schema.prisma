@@ -50,6 +50,8 @@ model User {
   passwordHash  String?
   // Google Calendar ICS (iCal) secret address — read-only subscribe URL.
   icalUrl       String?
+  // 목표 체중 (kg). 체중 탭 차트에 가로 기준선으로 표시.
+  targetWeightKg Float?
   // Notion Integration internal token + chosen workspace name (display).
   notionToken     String?
   notionWorkspace String?

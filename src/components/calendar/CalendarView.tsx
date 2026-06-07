@@ -69,9 +69,18 @@ export function CalendarShell() {
     entries: Array<{ id: string; date: string; kg: number }>;
   }>("/api/weight");
   const weightByDate = React.useMemo(() => {
-    const map = new Map<string, number>();
-    for (const w of weightData?.entries ?? []) {
-      map.set(format(new Date(w.date), "yyyy-MM-dd"), w.kg);
+    const map = new Map<string, { kg: number; delta: number | null }>();
+    const sorted = [...(weightData?.entries ?? [])].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+    );
+    let prevKg: number | null = null;
+    for (const w of sorted) {
+      const key = format(new Date(w.date), "yyyy-MM-dd");
+      map.set(key, {
+        kg: w.kg,
+        delta: prevKg == null ? null : w.kg - prevKg,
+      });
+      prevKg = w.kg;
     }
     return map;
   }, [weightData]);

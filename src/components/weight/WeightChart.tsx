@@ -33,7 +33,13 @@ function smoothPath(pts: Array<{ x: number; y: number }>) {
   return d.join(" ");
 }
 
-export function WeightChart({ entries }: { entries: Entry[] }) {
+export function WeightChart({
+  entries,
+  targetKg,
+}: {
+  entries: Entry[];
+  targetKg?: number | null;
+}) {
   const [hover, setHover] = React.useState<number | null>(null);
 
   if (entries.length === 0) {
@@ -45,8 +51,9 @@ export function WeightChart({ entries }: { entries: Entry[] }) {
   }
 
   const ys = entries.map((e) => e.kg);
-  const min = Math.floor(Math.min(...ys) - 0.6);
-  const max = Math.ceil(Math.max(...ys) + 0.6);
+  const tgt = targetKg ?? null;
+  const min = Math.floor(Math.min(...ys, tgt ?? Infinity) - 0.6);
+  const max = Math.ceil(Math.max(...ys, tgt ?? -Infinity) + 0.6);
   const span = Math.max(max - min, 0.1);
 
   const x = (i: number) =>
@@ -106,6 +113,42 @@ export function WeightChart({ entries }: { entries: Entry[] }) {
             </text>
           </g>
         ))}
+
+        {/* target weight reference line */}
+        {tgt !== null && (
+          <g>
+            <line
+              x1={PAD_X}
+              x2={W - PAD_X}
+              y1={y(tgt)}
+              y2={y(tgt)}
+              stroke="rgb(var(--grad-3))"
+              strokeWidth="1.4"
+              strokeDasharray="4 4"
+              opacity={0.7}
+            />
+            <rect
+              x={W - PAD_X - 70}
+              y={y(tgt) - 9}
+              width="68"
+              height="16"
+              rx="8"
+              fill="rgb(var(--bg))"
+              stroke="rgb(var(--grad-3))"
+              strokeWidth="1"
+            />
+            <text
+              x={W - PAD_X - 36}
+              y={y(tgt) + 3}
+              textAnchor="middle"
+              fontSize="9"
+              fontFamily="var(--font-mono)"
+              className="fill-fg-muted"
+            >
+              목표 {tgt.toFixed(1)}kg
+            </text>
+          </g>
+        )}
 
         {/* area + line */}
         <path d={area} fill="url(#wch-area)" />
