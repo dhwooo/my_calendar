@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown";
 import { WikiEditor } from "@/components/wiki/WikiEditor";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 
 export type WikiPageMeta = {
   id: string;
@@ -49,6 +50,7 @@ export function WikiClient({
   const pages = data?.pages ?? [];
   const tree = buildTree(pages);
   const studyPage = pages.find((p) => p.parentId === null && p.title === "공부");
+  const confirm = useConfirm();
 
   const [activeId, setActiveId] = React.useState<string | null>(null);
   // Auto-select first page only on desktop (mobile starts on list view)
@@ -100,7 +102,13 @@ export function WikiClient({
   }
 
   async function deletePage(id: string) {
-    if (!confirm("이 페이지와 하위 페이지가 삭제됩니다. 계속할까요?")) return;
+    const ok = await confirm({
+      title: "페이지 삭제",
+      description: "이 페이지와 모든 하위 페이지가 삭제됩니다. 복구할 수 없어요.",
+      confirmText: "삭제",
+      tone: "destructive",
+    });
+    if (!ok) return;
     await fetch(`/api/wiki/${id}`, { method: "DELETE" });
     await mutate();
     if (activeId === id) setActiveId(null);
@@ -156,33 +164,39 @@ export function WikiClient({
             onDelete={deletePage}
           />
           {pages.length === 0 && (
-            <div className="mt-2 space-y-2">
-              <button
-                onClick={() => createPage(null)}
-                className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition hover:bg-bg-muted hover:text-fg"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                첫 페이지 만들기
-              </button>
-              <button
-                onClick={async () => {
-                  const res = await fetch("/api/wiki/seed/linux-master", {
-                    method: "POST",
-                  });
-                  if (res.ok) await mutate();
-                }}
-                className="flex w-full items-center gap-2 rounded-lg border border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8 px-2.5 py-2.5 text-left text-[12px] text-fg transition hover:from-[rgb(var(--grad-1))]/12 hover:to-[rgb(var(--grad-3))]/12"
-              >
-                <span className="text-[16px]">🐧</span>
-                <span className="flex-1">
-                  <span className="block font-medium">리눅스마스터 2급 2차</span>
-                  <span className="block font-mono text-[10px] text-fg-subtle">
-                    합격 플랜 가져오기
-                  </span>
-                </span>
-              </button>
-            </div>
+            <button
+              onClick={() => createPage(null)}
+              className="mt-2 flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] text-fg-muted transition hover:bg-bg-muted hover:text-fg"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              첫 페이지 만들기
+            </button>
           )}
+          <button
+            onClick={async () => {
+              const res = await fetch("/api/wiki/seed/linux-master", {
+                method: "POST",
+              });
+              if (res.ok) await mutate();
+              else {
+                const j = await res.json().catch(() => null);
+                if (j?.reason === "already seeded" || j?.moved) {
+                  await mutate();
+                } else if (j?.error) {
+                  alert(j.error);
+                }
+              }
+            }}
+            className="mt-2 flex w-full items-center gap-2 rounded-lg border border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8 px-2.5 py-2.5 text-left text-[12px] text-fg transition hover:from-[rgb(var(--grad-1))]/12 hover:to-[rgb(var(--grad-3))]/12"
+          >
+            <span className="text-[16px]">🐧</span>
+            <span className="flex-1">
+              <span className="block font-medium">리눅스마스터 2급 2차</span>
+              <span className="block font-mono text-[10px] text-fg-subtle">
+                합격 플랜 가져오기
+              </span>
+            </span>
+          </button>
         </div>
       </aside>
 

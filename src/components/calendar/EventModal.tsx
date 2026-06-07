@@ -164,15 +164,26 @@ export function EventModal({
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-fg-muted">
-            <input
-              type="checkbox"
-              checked={allDay}
-              onChange={(e) => setAllDay(e.target.checked)}
-              className="h-4 w-4 rounded border-border"
-            />
-            종일
-          </label>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-sm text-fg-muted">
+              <input
+                type="checkbox"
+                checked={allDay}
+                onChange={(e) => setAllDay(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              종일
+            </label>
+            <label className="flex items-center gap-2 text-sm text-fg-muted">
+              <input
+                type="checkbox"
+                checked={shared}
+                onChange={(e) => setShared(e.target.checked)}
+                className="h-4 w-4 rounded border-border"
+              />
+              공용 일정 (상대 캘린더에도 표시)
+            </label>
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <Input

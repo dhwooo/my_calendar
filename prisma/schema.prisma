@@ -52,6 +52,8 @@ model User {
   icalUrl       String?
   // 목표 체중 (kg). 체중 탭 차트에 가로 기준선으로 표시.
   targetWeightKg Float?
+  // 공용 게시판 새 글 알림 받기
+  boardNotify Boolean @default(true)
   // Notion Integration internal token + chosen workspace name (display).
   notionToken     String?
   notionWorkspace String?

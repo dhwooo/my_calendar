@@ -256,7 +256,7 @@ export function CalendarShell() {
         events={events}
         weightKg={
           dayPopupDate
-            ? weightByDate.get(format(dayPopupDate, "yyyy-MM-dd")) ?? null
+            ? weightByDate.get(format(dayPopupDate, "yyyy-MM-dd"))?.kg ?? null
             : null
         }
         onAdd={() => {

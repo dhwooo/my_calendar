@@ -18,6 +18,8 @@ export type Profile = {
     image: string | null;
     email: string | null;
     icalUrl: string | null;
+    targetWeightKg?: number | null;
+    boardNotify?: boolean;
   };
   googleConnected: boolean;
 };
@@ -372,6 +374,43 @@ export function ProfileClient({
             )}
           </div>
         )}
+
+        {/* Board notify toggle */}
+        <div className="mt-4 flex items-center justify-between border-t border-border/40 pt-3">
+          <div>
+            <p className="text-[13px] font-medium text-fg">공용 게시판 알림</p>
+            <p className="font-mono text-[10px] text-fg-subtle">
+              상대가 새 글을 올리면 푸시 알림
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={data?.user.boardNotify ?? true}
+            onClick={async () => {
+              const next = !(data?.user.boardNotify ?? true);
+              await fetch("/api/profile", {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ boardNotify: next }),
+              });
+              await mutate();
+            }}
+            className={
+              (data?.user.boardNotify ?? true)
+                ? "relative h-6 w-11 rounded-full bg-accent transition"
+                : "relative h-6 w-11 rounded-full bg-fg/15 transition"
+            }
+          >
+            <span
+              className={
+                (data?.user.boardNotify ?? true)
+                  ? "absolute top-0.5 left-[22px] h-5 w-5 rounded-full bg-white shadow transition"
+                  : "absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow transition"
+              }
+            />
+          </button>
+        </div>
       </div>
     </div>
   );

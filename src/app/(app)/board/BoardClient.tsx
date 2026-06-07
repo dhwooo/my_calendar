@@ -8,6 +8,7 @@ import { ko } from "date-fns/locale";
 import { ImageIcon, Send, Trash2, MessageCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 type Author = {
@@ -87,6 +88,7 @@ async function compressImage(file: File): Promise<string> {
 export function BoardClient() {
   const { data: session } = useSession();
   const meId = session?.user?.id ?? null;
+  const confirm = useConfirm();
   const [filterCategory, setFilterCategory] = React.useState<string | null>(null);
   const listKey = filterCategory
     ? `/api/board?category=${encodeURIComponent(filterCategory)}`
@@ -137,7 +139,13 @@ export function BoardClient() {
   }
 
   async function deletePost(id: string) {
-    if (!confirm("이 게시물을 삭제할까요?")) return;
+    const ok = await confirm({
+      title: "게시물 삭제",
+      description: "이 게시물과 댓글이 모두 삭제됩니다. 복구할 수 없어요.",
+      confirmText: "삭제",
+      tone: "destructive",
+    });
+    if (!ok) return;
     await fetch(`/api/board/${id}`, { method: "DELETE" });
     await mutate((k) => typeof k === "string" && k.startsWith("/api/board"));
   }
@@ -274,6 +282,7 @@ function PostCard({
   const [showComments, setShowComments] = React.useState(false);
   const [commenting, setCommenting] = React.useState(false);
   const [viewer, setViewer] = React.useState<number | null>(null);
+  const confirm = useConfirm();
 
   async function addComment() {
     const v = commentText.trim();
@@ -292,7 +301,13 @@ function PostCard({
     }
   }
   async function deleteComment(cid: string) {
-    if (!confirm("댓글을 삭제할까요?")) return;
+    const ok = await confirm({
+      title: "댓글 삭제",
+      description: "이 댓글을 삭제할까요?",
+      confirmText: "삭제",
+      tone: "destructive",
+    });
+    if (!ok) return;
     await fetch(`/api/board/${post.id}/comments/${cid}`, { method: "DELETE" });
     await mutate((k) => typeof k === "string" && k.startsWith("/api/board"));
   }

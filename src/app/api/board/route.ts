@@ -87,8 +87,12 @@ export async function POST(req: Request) {
       where: { id: session.user.id },
       select: { name: true, username: true },
     });
+    // boardNotify=true인 다른 유저의 구독만
     const otherSubs = await prisma.pushSubscription.findMany({
-      where: { userId: { not: session.user.id } },
+      where: {
+        userId: { not: session.user.id },
+        user: { boardNotify: true },
+      },
     });
     if (otherSubs.length > 0) {
       const authorName = author?.name ?? author?.username ?? "누군가";

@@ -15,6 +15,7 @@ const schema = z.object({
     .nullable()
     .optional(),
   targetWeightKg: z.number().min(20).max(300).nullable().optional(),
+  boardNotify: z.boolean().optional(),
 });
 
 export async function GET() {
@@ -31,6 +32,7 @@ export async function GET() {
       email: true,
       icalUrl: true,
       targetWeightKg: true,
+      boardNotify: true,
     },
   });
   const google = await prisma.account.findFirst({
@@ -53,11 +55,14 @@ export async function PATCH(req: Request) {
     image?: string;
     icalUrl?: string | null;
     targetWeightKg?: number | null;
+    boardNotify?: boolean;
   } = {};
   if (parsed.data.name) updates.name = parsed.data.name;
   if (parsed.data.icalUrl !== undefined) updates.icalUrl = parsed.data.icalUrl;
   if (parsed.data.targetWeightKg !== undefined)
     updates.targetWeightKg = parsed.data.targetWeightKg;
+  if (parsed.data.boardNotify !== undefined)
+    updates.boardNotify = parsed.data.boardNotify;
 
   if (parsed.data.imageDataUrl) {
     const match = parsed.data.imageDataUrl.match(

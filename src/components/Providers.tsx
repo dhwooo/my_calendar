@@ -3,6 +3,7 @@
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { SWRConfig } from "swr";
+import { ConfirmProvider } from "@/components/ui/confirm-dialog";
 
 /**
  * localStorage 기반 SWR 캐시 — 새로고침해도 이전 응답을 즉시 보여주고
@@ -56,7 +57,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             keepPreviousData: true,
           }}
         >
-          {children}
+          <ConfirmProvider>{children}</ConfirmProvider>
         </SWRConfig>
       </ThemeProvider>
     </SessionProvider>
