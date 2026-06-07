@@ -370,6 +370,8 @@ function PostCard({
               key={img.id}
               src={img.url}
               alt=""
+              loading="lazy"
+              decoding="async"
               onClick={() => setViewer(i)}
               className={cn(
                 "w-full cursor-zoom-in object-cover transition hover:opacity-90",
