@@ -35,7 +35,13 @@ export function EventDetailsPopup({
   if (!event) return null;
   const start = new Date(event.start);
   const end = new Date(event.end);
-  const sameDay = isSameDay(start, end);
+  const isIcal = event.id.startsWith("ical:");
+  // 종일 이벤트는 UTC 자정 기준 → 로컬에서 같은 날인지 판단하려면 UTC 날짜 비교
+  const sameDay = event.allDay
+    ? start.getUTCFullYear() === end.getUTCFullYear() &&
+      start.getUTCMonth() === end.getUTCMonth() &&
+      start.getUTCDate() === end.getUTCDate()
+    : isSameDay(start, end);
   const holiday = getHoliday(start);
 
   return (
@@ -59,9 +65,26 @@ export function EventDetailsPopup({
         {/* Body */}
         <div className="space-y-3 px-6 py-5">
           <Row icon={<CalIcon className="h-4 w-4" />}>
-            {sameDay
-              ? format(start, "yyyy년 M월 d일 (EEE)")
-              : `${format(start, "M월 d일")} – ${format(end, "M월 d일")}`}
+            {(() => {
+              if (event.allDay) {
+                const sLoc = new Date(
+                  start.getUTCFullYear(),
+                  start.getUTCMonth(),
+                  start.getUTCDate(),
+                );
+                const eLoc = new Date(
+                  end.getUTCFullYear(),
+                  end.getUTCMonth(),
+                  end.getUTCDate(),
+                );
+                return sameDay
+                  ? format(sLoc, "yyyy년 M월 d일 (EEE)")
+                  : `${format(sLoc, "M월 d일")} – ${format(eLoc, "M월 d일")}`;
+              }
+              return sameDay
+                ? format(start, "yyyy년 M월 d일 (EEE)")
+                : `${format(start, "M월 d일")} – ${format(end, "M월 d일")}`;
+            })()}
           </Row>
           {!event.allDay && (
             <Row icon={<Clock className="h-4 w-4" />}>
@@ -81,24 +104,30 @@ export function EventDetailsPopup({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-2 border-t border-border/60 bg-bg-subtle/40 px-4 py-3">
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              if (!confirm("이 이벤트를 삭제할까요?")) return;
-              await onDelete();
-              onOpenChange(false);
-            }}
-            className="flex-1 gap-2 rounded-xl text-red-500 hover:bg-red-500/10"
-          >
-            <Trash2 className="h-4 w-4" />
-            삭제
-          </Button>
-          <Button onClick={onEdit} className="flex-1 gap-2 rounded-xl">
-            <Pencil className="h-4 w-4" />
-            수정
-          </Button>
-        </div>
+        {isIcal ? (
+          <div className="border-t border-border/60 bg-bg-subtle/40 px-4 py-3 text-center font-mono text-[10px] uppercase tracking-wider text-fg-subtle">
+            ICS 구독 일정 · 읽기 전용
+          </div>
+        ) : (
+          <div className="flex gap-2 border-t border-border/60 bg-bg-subtle/40 px-4 py-3">
+            <Button
+              variant="ghost"
+              onClick={async () => {
+                if (!confirm("이 이벤트를 삭제할까요?")) return;
+                await onDelete();
+                onOpenChange(false);
+              }}
+              className="flex-1 gap-2 rounded-xl text-red-500 hover:bg-red-500/10"
+            >
+              <Trash2 className="h-4 w-4" />
+              삭제
+            </Button>
+            <Button onClick={onEdit} className="flex-1 gap-2 rounded-xl">
+              <Pencil className="h-4 w-4" />
+              수정
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
