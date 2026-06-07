@@ -16,7 +16,12 @@ const GOOGLE_SCOPES = [
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   // Credentials provider requires JWT strategy.
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    // 자동 로그인 90일 유지 (모바일 PWA에서 자주 안 끊기게)
+    maxAge: 60 * 60 * 24 * 90,
+    updateAge: 60 * 60 * 24,
+  },
   providers: [
     CredentialsProvider({
       name: "ID",
