@@ -75,6 +75,8 @@ model Post {
   id        String   @id @default(cuid())
   authorId  String
   content   String   @default("")
+  // 게시판 카테고리 (일반/여행/음식/추억 등 — 자유 문자열)
+  category  String   @default("일반")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -83,6 +85,7 @@ model Post {
   comments PostComment[]
 
   @@index([createdAt])
+  @@index([category])
 }
 
 model PostImage {
@@ -245,6 +248,8 @@ model Event {
   color       String?
   // Mood emoji, e.g. "😊"
   mood        String?
+  // 공용 일정 — true면 다른 유저 캘린더에도 표시
+  shared      Boolean  @default(false)
   // 알림: 시작 N분 전. null = 알림 없음. 0 = 정각.
   notifyMinutes Int?
   // 마지막 알림 발송 시각 (중복 발송 방지)

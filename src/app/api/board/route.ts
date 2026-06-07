@@ -4,15 +4,20 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { newImageFilename, uploadImage } from "@/lib/storage";
+import { getVapid, webpush } from "@/lib/vapid";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: Request) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
 
+  const { searchParams } = new URL(req.url);
+  const category = searchParams.get("category");
+
   const posts = await prisma.post.findMany({
+    where: category ? { category } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
       author: { select: { id: true, name: true, username: true, image: true } },
@@ -31,9 +36,10 @@ export async function GET() {
 
 const CreateSchema = z.object({
   content: z.string().max(4000),
+  category: z.string().max(20).optional(),
   images: z
     .array(z.string().startsWith("data:image/"))
-    .max(8)
+    .max(20)
     .optional(),
 });
 
@@ -55,6 +61,7 @@ export async function POST(req: Request) {
     data: {
       authorId: session.user.id,
       content: data.content,
+      category: data.category || "일반",
     },
   });
 
@@ -71,6 +78,37 @@ export async function POST(req: Request) {
         data: { postId: post.id, url, order: i },
       });
     }
+  }
+
+  // 다른 유저에게 푸시 알림
+  try {
+    await getVapid();
+    const author = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { name: true, username: true },
+    });
+    const otherSubs = await prisma.pushSubscription.findMany({
+      where: { userId: { not: session.user.id } },
+    });
+    if (otherSubs.length > 0) {
+      const authorName = author?.name ?? author?.username ?? "누군가";
+      const preview = data.content.slice(0, 60) || "사진 게시물";
+      const payload = JSON.stringify({
+        title: `${authorName} 님의 새 게시물`,
+        body: preview,
+        url: "/board",
+      });
+      await Promise.allSettled(
+        otherSubs.map((s) =>
+          webpush.sendNotification(
+            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+            payload,
+          ),
+        ),
+      );
+    }
+  } catch (err) {
+    console.warn("[board] push notify failed", err);
   }
 
   const full = await prisma.post.findUnique({

@@ -26,38 +26,91 @@ type Comment = {
 type Post = {
   id: string;
   content: string;
+  category: string;
   createdAt: string;
   author: Author;
   images: PostImage[];
   comments: Comment[];
 };
 
+const CATEGORIES = [
+  { key: "전체", value: null },
+  { key: "일반", value: "일반" },
+  { key: "여행", value: "여행" },
+  { key: "음식", value: "음식" },
+  { key: "추억", value: "추억" },
+  { key: "기타", value: "기타" },
+] as const;
+
+const POST_CATEGORIES = ["일반", "여행", "음식", "추억", "기타"];
+
+/**
+ * 클라이언트 사이드 이미지 압축 — 최대 2048px, JPEG quality 0.82.
+ * 큰 사진(예: 5MB)도 200~500KB 수준으로 축소돼 업로드/저장 비용을 크게 줄임.
+ */
+async function compressImage(file: File): Promise<string> {
+  const dataUrl = await new Promise<string>((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result as string);
+    r.onerror = rej;
+    r.readAsDataURL(file);
+  });
+  return new Promise((res, rej) => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 2048;
+      let { width, height } = img;
+      if (width > MAX || height > MAX) {
+        if (width > height) {
+          height = Math.round((height * MAX) / width);
+          width = MAX;
+        } else {
+          width = Math.round((width * MAX) / height);
+          height = MAX;
+        }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return res(dataUrl);
+      ctx.drawImage(img, 0, 0, width, height);
+      // GIF는 압축 시 정지 이미지가 되므로 원본 유지
+      if (file.type === "image/gif") return res(dataUrl);
+      res(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = rej;
+    img.src = dataUrl;
+  });
+}
+
 export function BoardClient() {
   const { data: session } = useSession();
   const meId = session?.user?.id ?? null;
-  const { data } = useSWR<{ posts: Post[] }>("/api/board");
+  const [filterCategory, setFilterCategory] = React.useState<string | null>(null);
+  const listKey = filterCategory
+    ? `/api/board?category=${encodeURIComponent(filterCategory)}`
+    : "/api/board";
+  const { data } = useSWR<{ posts: Post[] }>(listKey);
   const posts = data?.posts ?? [];
 
   const [content, setContent] = React.useState("");
   const [images, setImages] = React.useState<string[]>([]);
+  const [category, setCategory] = React.useState<string>("일반");
   const [posting, setPosting] = React.useState(false);
+  const [compressing, setCompressing] = React.useState(false);
   const fileRef = React.useRef<HTMLInputElement>(null);
 
   async function onPickFiles(files: FileList | null) {
     if (!files) return;
-    const arr = Array.from(files).slice(0, 8 - images.length);
-    const dataUrls = await Promise.all(
-      arr.map(
-        (f) =>
-          new Promise<string>((res, rej) => {
-            const r = new FileReader();
-            r.onload = () => res(r.result as string);
-            r.onerror = rej;
-            r.readAsDataURL(f);
-          }),
-      ),
-    );
-    setImages((p) => [...p, ...dataUrls]);
+    const arr = Array.from(files).slice(0, 20 - images.length);
+    setCompressing(true);
+    try {
+      const compressed = await Promise.all(arr.map((f) => compressImage(f)));
+      setImages((p) => [...p, ...compressed]);
+    } finally {
+      setCompressing(false);
+    }
   }
 
   async function submit() {
@@ -67,12 +120,16 @@ export function BoardClient() {
       const res = await fetch("/api/board", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ content, images }),
+        body: JSON.stringify({ content, category, images }),
       });
       if (res.ok) {
         setContent("");
         setImages([]);
-        await mutate("/api/board");
+        await mutate(listKey);
+        // 다른 카테고리 캐시도 무효화
+        await mutate(
+          (k) => typeof k === "string" && k.startsWith("/api/board"),
+        );
       }
     } finally {
       setPosting(false);
@@ -82,22 +139,42 @@ export function BoardClient() {
   async function deletePost(id: string) {
     if (!confirm("이 게시물을 삭제할까요?")) return;
     await fetch(`/api/board/${id}`, { method: "DELETE" });
-    await mutate("/api/board");
+    await mutate((k) => typeof k === "string" && k.startsWith("/api/board"));
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-8 sm:py-10 anim-fade-in">
-      <div className="mb-6 flex items-baseline gap-3">
-        <h1 className="text-gradient text-[32px] font-semibold tracking-tight sm:text-[40px]">
+    <div className="mx-auto max-w-2xl px-3 py-4 sm:px-8 sm:py-10 anim-fade-in">
+      <div className="mb-4 flex items-baseline gap-3 px-1 sm:mb-6">
+        <h1 className="text-gradient text-[26px] font-semibold tracking-tight sm:text-[40px]">
           공용 게시판
         </h1>
-        <span className="font-mono text-[11px] uppercase tracking-[0.2em] text-fg-subtle">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-subtle">
           board
         </span>
       </div>
 
+      {/* Category filter tabs */}
+      <div className="-mx-3 mb-4 overflow-x-auto px-3 sm:mx-0 sm:px-0">
+        <div className="flex gap-1.5">
+          {CATEGORIES.map((c) => (
+            <button
+              key={c.key}
+              onClick={() => setFilterCategory(c.value)}
+              className={cn(
+                "shrink-0 rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
+                filterCategory === c.value
+                  ? "border-accent bg-accent text-accent-fg"
+                  : "border-border bg-bg-subtle/40 text-fg-muted hover:bg-bg-muted hover:text-fg",
+              )}
+            >
+              {c.key}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Composer */}
-      <div className="mb-6 rounded-2xl border border-border/70 bg-bg-subtle/40 p-4">
+      <div className="mb-5 rounded-2xl border border-border/70 bg-bg-subtle/40 p-3 sm:p-4">
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -106,7 +183,7 @@ export function BoardClient() {
           className="w-full resize-none rounded-xl border border-border/60 bg-bg p-3 text-[14px] outline-none focus:border-accent/60"
         />
         {images.length > 0 && (
-          <div className="mt-3 grid grid-cols-4 gap-2">
+          <div className="mt-2 grid grid-cols-4 gap-1.5 sm:grid-cols-5">
             {images.map((src, i) => (
               <div key={i} className="relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -117,7 +194,7 @@ export function BoardClient() {
                 />
                 <button
                   onClick={() => setImages((p) => p.filter((_, j) => j !== i))}
-                  className="absolute right-1 top-1 rounded-full bg-black/60 p-0.5 text-white hover:bg-black/80"
+                  className="absolute right-0.5 top-0.5 rounded-full bg-black/70 p-0.5 text-white"
                   aria-label="삭제"
                 >
                   <X className="h-3 w-3" />
@@ -126,7 +203,18 @@ export function BoardClient() {
             ))}
           </div>
         )}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            className="h-9 rounded-lg border border-border/60 bg-bg px-2 text-[12px] outline-none focus:border-accent/60"
+          >
+            {POST_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
           <input
             ref={fileRef}
             type="file"
@@ -138,18 +226,19 @@ export function BoardClient() {
           <Button
             variant="ghost"
             onClick={() => fileRef.current?.click()}
-            disabled={images.length >= 8}
-            className="gap-2 rounded-xl text-[12px]"
+            disabled={images.length >= 20 || compressing}
+            className="h-9 gap-1.5 rounded-lg text-[12px]"
           >
-            <ImageIcon className="h-4 w-4" />
-            사진 ({images.length}/8)
+            <ImageIcon className="h-3.5 w-3.5" />
+            {compressing ? "압축중..." : `사진 ${images.length}/20`}
           </Button>
+          <div className="ml-auto" />
           <Button
             onClick={submit}
-            disabled={posting || (!content.trim() && images.length === 0)}
-            className="gap-2 rounded-xl"
+            disabled={posting || compressing || (!content.trim() && images.length === 0)}
+            className="h-9 gap-1.5 rounded-lg"
           >
-            <Send className="h-4 w-4" />
+            <Send className="h-3.5 w-3.5" />
             {posting ? "올리는 중..." : "올리기"}
           </Button>
         </div>
@@ -157,11 +246,11 @@ export function BoardClient() {
 
       {/* List */}
       {posts.length === 0 ? (
-        <p className="py-16 text-center font-mono text-[12px] text-fg-subtle">
+        <p className="py-12 text-center font-mono text-[12px] text-fg-subtle">
           첫 게시물을 남겨보세요
         </p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {posts.map((p) => (
             <PostCard key={p.id} post={p} meId={meId} onDelete={deletePost} />
           ))}
@@ -184,6 +273,7 @@ function PostCard({
   const [commentText, setCommentText] = React.useState("");
   const [showComments, setShowComments] = React.useState(false);
   const [commenting, setCommenting] = React.useState(false);
+  const [viewer, setViewer] = React.useState<number | null>(null);
 
   async function addComment() {
     const v = commentText.trim();
@@ -196,7 +286,7 @@ function PostCard({
         body: JSON.stringify({ content: v }),
       });
       setCommentText("");
-      await mutate("/api/board");
+      await mutate((k) => typeof k === "string" && k.startsWith("/api/board"));
     } finally {
       setCommenting(false);
     }
@@ -204,20 +294,25 @@ function PostCard({
   async function deleteComment(cid: string) {
     if (!confirm("댓글을 삭제할까요?")) return;
     await fetch(`/api/board/${post.id}/comments/${cid}`, { method: "DELETE" });
-    await mutate("/api/board");
+    await mutate((k) => typeof k === "string" && k.startsWith("/api/board"));
   }
 
   return (
-    <article className="rounded-2xl border border-border/70 bg-bg p-4 shadow-sm">
-      <header className="mb-3 flex items-center gap-3">
+    <article className="rounded-2xl border border-border/70 bg-bg p-3 shadow-sm sm:p-4">
+      <header className="mb-2.5 flex items-center gap-2.5">
         <Avatar
           name={post.author.name ?? post.author.username ?? "?"}
           src={post.author.image}
-          size={36}
+          size={32}
         />
         <div className="min-w-0 flex-1">
-          <div className="text-[13px] font-medium text-fg">
-            {post.author.name ?? post.author.username}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[13px] font-medium text-fg">
+              {post.author.name ?? post.author.username}
+            </span>
+            <span className="rounded-full bg-bg-muted px-1.5 py-0.5 font-mono text-[9px] text-fg-muted">
+              {post.category || "일반"}
+            </span>
           </div>
           <div className="font-mono text-[10px] text-fg-subtle">
             {formatDistanceToNow(new Date(post.createdAt), {
@@ -238,7 +333,7 @@ function PostCard({
       </header>
 
       {post.content && (
-        <p className="mb-3 whitespace-pre-wrap text-[14px] leading-relaxed text-fg">
+        <p className="mb-2.5 whitespace-pre-wrap break-words text-[14px] leading-relaxed text-fg">
           {post.content}
         </p>
       )}
@@ -246,7 +341,7 @@ function PostCard({
       {post.images.length > 0 && (
         <div
           className={cn(
-            "mb-3 grid gap-1.5",
+            "mb-2.5 grid gap-1",
             post.images.length === 1
               ? "grid-cols-1"
               : post.images.length === 2
@@ -254,13 +349,19 @@ function PostCard({
                 : "grid-cols-3",
           )}
         >
-          {post.images.map((img) => (
+          {post.images.map((img, i) => (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               key={img.id}
               src={img.url}
               alt=""
-              className="aspect-square w-full rounded-xl object-cover"
+              onClick={() => setViewer(i)}
+              className={cn(
+                "w-full cursor-zoom-in object-cover transition hover:opacity-90",
+                post.images.length === 1
+                  ? "max-h-[420px] rounded-xl"
+                  : "aspect-square rounded-lg",
+              )}
             />
           ))}
         </div>
@@ -277,13 +378,13 @@ function PostCard({
       </div>
 
       {showComments && (
-        <div className="mt-3 space-y-2 border-t border-border/40 pt-3">
+        <div className="mt-2.5 space-y-2 border-t border-border/40 pt-2.5">
           {post.comments.map((c) => (
             <div key={c.id} className="flex items-start gap-2">
               <Avatar
                 name={c.author.name ?? c.author.username ?? "?"}
                 src={c.author.image}
-                size={24}
+                size={22}
               />
               <div className="min-w-0 flex-1 rounded-xl bg-bg-subtle/60 px-3 py-2">
                 <div className="mb-0.5 flex items-baseline gap-2">
@@ -297,7 +398,7 @@ function PostCard({
                     })}
                   </span>
                 </div>
-                <p className="whitespace-pre-wrap text-[12px] text-fg">{c.content}</p>
+                <p className="whitespace-pre-wrap break-words text-[12px] text-fg">{c.content}</p>
               </div>
               {c.author.id === meId && (
                 <button
@@ -311,7 +412,7 @@ function PostCard({
             </div>
           ))}
 
-          <div className="mt-3 flex gap-2">
+          <div className="mt-2 flex gap-2">
             <input
               value={commentText}
               onChange={(e) => setCommentText(e.target.value)}
@@ -327,6 +428,30 @@ function PostCard({
               <Send className="h-3.5 w-3.5" />
             </Button>
           </div>
+        </div>
+      )}
+
+      {/* Image viewer overlay */}
+      {viewer !== null && (
+        <div
+          onClick={() => setViewer(null)}
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 p-4"
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={post.images[viewer].url}
+            alt=""
+            className="max-h-full max-w-full object-contain"
+          />
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setViewer(null);
+            }}
+            className="absolute right-4 top-4 rounded-full bg-white/20 p-2 text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
       )}
     </article>

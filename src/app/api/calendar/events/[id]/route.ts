@@ -14,6 +14,7 @@ const inputSchema = z.object({
   allDay: z.boolean().optional(),
   mood: z.string().nullable().optional(),
   notifyMinutes: z.number().int().nullable().optional(),
+  shared: z.boolean().optional(),
 });
 
 type Ctx = { params: { id: string } };
@@ -45,6 +46,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
       allDay: data.allDay ?? false,
       mood: data.mood ?? null,
       notifyMinutes: data.notifyMinutes ?? null,
+      shared: data.shared ?? false,
       // 알림 설정이 바뀌면 이미 보낸 표시를 초기화
       notifiedAt:
         data.notifyMinutes !== existing.notifyMinutes ? null : existing.notifiedAt,

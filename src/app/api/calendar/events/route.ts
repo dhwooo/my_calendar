@@ -17,6 +17,7 @@ const inputSchema = z.object({
   allDay: z.boolean().optional(),
   mood: z.string().nullable().optional(),
   notifyMinutes: z.number().int().nullable().optional(),
+  shared: z.boolean().optional(),
 });
 
 export async function GET(req: Request) {
@@ -32,9 +33,10 @@ export async function GET(req: Request) {
   const toDate = new Date(to);
 
   // DB만 빠르게 반환. ICS는 별도 엔드포인트로 분리(/api/calendar/ical).
+  // 본인 일정 OR 공용 일정(shared=true).
   const events = await prisma.event.findMany({
     where: {
-      userId: session.user.id,
+      OR: [{ userId: session.user.id }, { shared: true }],
       start: { lte: toDate },
       end: { gte: fromDate },
     },
@@ -72,6 +74,7 @@ export async function POST(req: Request) {
       allDay: data.allDay ?? false,
       mood: data.mood ?? null,
       notifyMinutes: data.notifyMinutes ?? null,
+      shared: data.shared ?? false,
     },
   });
 

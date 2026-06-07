@@ -32,6 +32,7 @@ type Props = {
     allDay?: boolean;
     mood?: string | null;
     notifyMinutes?: number | null;
+    shared?: boolean;
   }) => Promise<void>;
   onDelete?: () => Promise<void>;
 };
@@ -71,6 +72,7 @@ export function EventModal({
   const [notifyMinutes, setNotifyMinutes] = React.useState<number | null>(
     event?.notifyMinutes ?? null,
   );
+  const [shared, setShared] = React.useState<boolean>(event?.shared ?? false);
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -81,6 +83,7 @@ export function EventModal({
     setAllDay(event?.allDay ?? false);
     setMood(event?.mood ?? null);
     setNotifyMinutes(event?.notifyMinutes ?? null);
+    setShared(event?.shared ?? false);
     const s = event ? new Date(event.start) : initialStart;
     const e = event ? new Date(event.end) : initialEnd;
     setStartDate(fmt.dateInput(s));
@@ -109,6 +112,7 @@ export function EventModal({
         allDay,
         mood,
         notifyMinutes,
+        shared,
       });
       onOpenChange(false);
     } finally {
