@@ -17,6 +17,7 @@ type Props = {
   selected: Date;
   events: EventDTO[];
   weightByDate?: Map<string, { kg: number; delta: number | null }>;
+  todosByDate?: Map<string, { total: number; done: number }>;
   onSelectDay: (d: Date) => void;
   onSelectEvent: (e: EventDTO) => void;
 };
@@ -40,6 +41,7 @@ export function MonthView({
   selected,
   events,
   weightByDate,
+  todosByDate,
   onSelectDay,
   onSelectEvent,
 }: Props) {
@@ -83,6 +85,7 @@ export function MonthView({
           const weightInfo = weightByDate?.get(dayKey);
           const weight = weightInfo?.kg;
           const weightDelta = weightInfo?.delta ?? null;
+          const todoInfo = todosByDate?.get(dayKey);
 
           return (
             <button
@@ -107,7 +110,22 @@ export function MonthView({
                 >
                   {fmt.day(d)}
                 </span>
-                {mood && <span className="shrink-0 text-[14px]">{mood}</span>}
+                <div className="flex items-center gap-1">
+                  {todoInfo && todoInfo.total > 0 && !muted && (
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-md px-1 py-px font-mono text-[8px] tabular-nums sm:text-[9px]",
+                        todoInfo.done === todoInfo.total
+                          ? "bg-emerald-500/10 text-emerald-600"
+                          : "bg-sky-500/10 text-sky-600",
+                      )}
+                      title={`할 일 ${todoInfo.done}/${todoInfo.total}`}
+                    >
+                      ✓ {todoInfo.done}/{todoInfo.total}
+                    </span>
+                  )}
+                  {mood && <span className="shrink-0 text-[14px]">{mood}</span>}
+                </div>
               </div>
 
               {holiday && !muted && (

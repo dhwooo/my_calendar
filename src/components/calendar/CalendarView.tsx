@@ -68,6 +68,23 @@ export function CalendarShell() {
   const { data: weightData } = useSWR<{
     entries: Array<{ id: string; date: string; kg: number }>;
   }>("/api/weight");
+
+  // Todos in current view range — for indicator on day cells.
+  const todosKey = `/api/todos?from=${range.start.toISOString()}&to=${range.end.toISOString()}`;
+  const { data: todoData } = useSWR<{
+    todos: Array<{ id: string; date: string; done: boolean }>;
+  }>(todosKey);
+  const todosByDate = React.useMemo(() => {
+    const map = new Map<string, { total: number; done: number }>();
+    for (const t of todoData?.todos ?? []) {
+      const key = format(new Date(t.date), "yyyy-MM-dd");
+      const entry = map.get(key) ?? { total: 0, done: 0 };
+      entry.total += 1;
+      if (t.done) entry.done += 1;
+      map.set(key, entry);
+    }
+    return map;
+  }, [todoData]);
   const weightByDate = React.useMemo(() => {
     const map = new Map<string, { kg: number; delta: number | null }>();
     const sorted = [...(weightData?.entries ?? [])].sort(
@@ -193,6 +210,7 @@ export function CalendarShell() {
                     selected={selected}
                     events={events}
                     weightByDate={weightByDate}
+                    todosByDate={todosByDate}
                     onSelectDay={(d) => {
                       setSelected(d);
                       setDayPopupDate(d);

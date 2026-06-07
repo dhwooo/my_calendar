@@ -15,12 +15,26 @@ export async function GET(req: NextRequest) {
   if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
 
   const dateParam = req.nextUrl.searchParams.get("date");
-  const where: { userId: string; date?: Date } = { userId: session.user.id };
-  if (dateParam) where.date = dayKey(new Date(dateParam));
+  const fromParam = req.nextUrl.searchParams.get("from");
+  const toParam = req.nextUrl.searchParams.get("to");
+
+  const where: {
+    userId: string;
+    date?: Date | { gte: Date; lte: Date };
+  } = { userId: session.user.id };
+
+  if (dateParam) {
+    where.date = dayKey(new Date(dateParam));
+  } else if (fromParam && toParam) {
+    where.date = {
+      gte: dayKey(new Date(fromParam)),
+      lte: dayKey(new Date(toParam)),
+    };
+  }
 
   const todos = await prisma.todo.findMany({
     where,
-    orderBy: [{ date: "desc" }, { order: "asc" }, { createdAt: "asc" }],
+    orderBy: [{ date: "asc" }, { order: "asc" }, { createdAt: "asc" }],
   });
   return NextResponse.json({ todos });
 }

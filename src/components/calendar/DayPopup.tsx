@@ -140,7 +140,6 @@ export function DayPopup({
             </ul>
           )}
 
-          <DayTodoSection date={date} />
         </div>
 
         {/* Add button */}
