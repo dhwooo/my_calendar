@@ -47,14 +47,35 @@ const MONTH_LABELS = [
 
 export function GoalsClient() {
   const [year, setYear] = React.useState(() => new Date().getFullYear());
+  const [month, setMonth] = React.useState(() => new Date().getMonth() + 1);
   const key = `/api/goals?year=${year}`;
   const { data } = useSWR<{ goals: Goal[] }>(key);
   const goals = data?.goals ?? [];
   const yearGoals = goals.filter((g) => g.month === null);
-  const goalsByMonth = (m: number) => goals.filter((g) => g.month === m);
+  const monthGoals = goals.filter((g) => g.month === month);
+
+  const shiftMonth = (n: number) => {
+    let m = month + n;
+    let y = year;
+    while (m < 1) {
+      m += 12;
+      y -= 1;
+    }
+    while (m > 12) {
+      m -= 12;
+      y += 1;
+    }
+    setYear(y);
+    setMonth(m);
+  };
+  const goToday = () => {
+    const now = new Date();
+    setYear(now.getFullYear());
+    setMonth(now.getMonth() + 1);
+  };
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8 sm:py-10 anim-fade-in">
+    <div className="mx-auto max-w-3xl px-5 py-6 sm:px-8 sm:py-10 anim-fade-in">
       <div className="mb-6 flex items-baseline gap-3">
         <h1 className="text-gradient text-[32px] font-semibold tracking-tight sm:text-[40px]">
           목표
@@ -65,60 +86,49 @@ export function GoalsClient() {
       </div>
 
       <div className="mb-5 flex items-center gap-2 rounded-2xl border border-border/60 bg-bg-subtle/40 p-2">
-        <Button variant="ghost" size="icon" onClick={() => setYear((y) => y - 1)}>
+        <Button variant="ghost" size="icon" onClick={() => shiftMonth(-1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <div className="flex flex-1 items-baseline justify-center gap-2">
           <span className="text-[20px] font-semibold tracking-tight text-fg">
-            {year}
+            {year}년 {month}월
           </span>
-          <span className="font-mono text-[11px] text-fg-subtle">year</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={() => setYear((y) => y + 1)}>
+        <Button variant="ghost" size="icon" onClick={() => shiftMonth(1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
         <Button
           variant="outline"
           size="sm"
           className="h-8 rounded-lg text-[11px]"
-          onClick={() => setYear(new Date().getFullYear())}
+          onClick={goToday}
         >
-          올해
+          오늘
         </Button>
       </div>
 
-      <Card
-        title={`${year}년 목표`}
-        sub="year"
-        goals={yearGoals}
-        year={year}
-        month={null}
-        cacheKey={key}
-        large
-      />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Card
+          title={`${year}년 목표`}
+          sub="year"
+          goals={yearGoals}
+          year={year}
+          month={null}
+          cacheKey={key}
+          large
+        />
+        <Card
+          title={`${month}월 목표`}
+          sub="month"
+          goals={monthGoals}
+          year={year}
+          month={month}
+          cacheKey={key}
+          large
+        />
+      </div>
 
       <TodoSection />
-
-      <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {MONTH_LABELS.map((label, i) => {
-          const now = new Date();
-          // 올해라면 현재 달 이전은 숨김. 다른 연도는 1~12월 모두 표시.
-          if (year === now.getFullYear() && i + 1 < now.getMonth() + 1) {
-            return null;
-          }
-          return (
-            <Card
-              key={i}
-              title={label}
-              sub="month"
-              goals={goalsByMonth(i + 1)}
-              year={year}
-              month={i + 1}
-              cacheKey={key}
-            />
-          );
-        })}
-      </div>
     </div>
   );
 }

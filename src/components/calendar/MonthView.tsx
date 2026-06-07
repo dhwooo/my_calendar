@@ -112,17 +112,30 @@ export function MonthView({
                 </span>
                 <div className="flex items-center gap-1">
                   {todoInfo && todoInfo.total > 0 && !muted && (
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-md px-1 py-px font-mono text-[8px] tabular-nums sm:text-[9px]",
-                        todoInfo.done === todoInfo.total
-                          ? "bg-emerald-500/10 text-emerald-600"
-                          : "bg-sky-500/10 text-sky-600",
-                      )}
-                      title={`할 일 ${todoInfo.done}/${todoInfo.total}`}
-                    >
-                      ✓ {todoInfo.done}/{todoInfo.total}
-                    </span>
+                    <>
+                      {/* 모바일: 작은 색 점 */}
+                      <span
+                        className={cn(
+                          "h-1.5 w-1.5 shrink-0 rounded-full sm:hidden",
+                          todoInfo.done === todoInfo.total
+                            ? "bg-emerald-500"
+                            : "bg-sky-500",
+                        )}
+                        title={`할 일 ${todoInfo.done}/${todoInfo.total}`}
+                      />
+                      {/* 데스크탑: 텍스트 칩 */}
+                      <span
+                        className={cn(
+                          "hidden shrink-0 rounded-md px-1 py-px font-mono text-[9px] tabular-nums sm:inline-block",
+                          todoInfo.done === todoInfo.total
+                            ? "bg-emerald-500/10 text-emerald-600"
+                            : "bg-sky-500/10 text-sky-600",
+                        )}
+                        title={`할 일 ${todoInfo.done}/${todoInfo.total}`}
+                      >
+                        ✓ {todoInfo.done}/{todoInfo.total}
+                      </span>
+                    </>
                   )}
                   {mood && <span className="shrink-0 text-[14px]">{mood}</span>}
                 </div>
