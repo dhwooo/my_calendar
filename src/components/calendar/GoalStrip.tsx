@@ -30,7 +30,7 @@ export function GoalStrip({ year, month }: { year: number; month: number }) {
   };
 
   return (
-    <div className="border-t border-border/60 bg-bg-subtle/30 px-4 py-3 sm:px-6">
+    <div className="border-b border-border/60 bg-bg-subtle/30 px-4 py-3 sm:px-6">
       <div className="mb-2 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Target className="h-3.5 w-3.5 text-fg-muted" />

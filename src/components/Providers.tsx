@@ -47,14 +47,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
       >
         <SWRConfig
           value={{
-            provider: localStorageProvider,
             fetcher: (url: string) =>
               fetch(url).then((r) => {
                 if (!r.ok) throw new Error(`${r.status}`);
                 return r.json();
               }),
             revalidateOnFocus: false,
-            // 캐시 즉시 표시 + 백그라운드 갱신 (stale-while-revalidate 기본 동작)
             keepPreviousData: true,
           }}
         >

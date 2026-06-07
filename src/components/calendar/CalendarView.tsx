@@ -205,6 +205,10 @@ export function CalendarShell() {
               )}
               {view === "month" && (
                 <>
+                  <GoalStrip
+                    year={anchor.getFullYear()}
+                    month={anchor.getMonth() + 1}
+                  />
                   <MonthView
                     anchor={anchor}
                     selected={selected}
@@ -216,10 +220,6 @@ export function CalendarShell() {
                       setDayPopupDate(d);
                     }}
                     onSelectEvent={openDetail}
-                  />
-                  <GoalStrip
-                    year={anchor.getFullYear()}
-                    month={anchor.getMonth() + 1}
                   />
                 </>
               )}
