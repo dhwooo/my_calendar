@@ -62,9 +62,11 @@ export function eventOnDay(
   const es = new Date(ev.start);
   const ee = new Date(ev.end);
   if (ev.allDay) {
-    const esDay = new Date(es.getFullYear(), es.getMonth(), es.getDate()).getTime();
-    const eeDay = new Date(ee.getFullYear(), ee.getMonth(), ee.getDate()).getTime();
-    const dayMs = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    // 종일 이벤트는 서버(UTC)에서 UTC 자정 기준으로 저장됨.
+    // 시작/종료의 "날짜 부분"은 UTC로 읽고, 캘린더 day는 로컬로 읽어 비교.
+    const esDay = Date.UTC(es.getUTCFullYear(), es.getUTCMonth(), es.getUTCDate());
+    const eeDay = Date.UTC(ee.getUTCFullYear(), ee.getUTCMonth(), ee.getUTCDate());
+    const dayMs = Date.UTC(day.getFullYear(), day.getMonth(), day.getDate());
     return esDay <= dayMs && dayMs <= eeDay;
   }
   const ds = new Date(day);
