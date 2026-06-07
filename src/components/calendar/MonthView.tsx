@@ -122,8 +122,7 @@ export function MonthView({
               )}
 
               {(() => {
-                const hasWeight = weight !== undefined && !muted;
-                const maxVisible = hasWeight ? 2 : 3;
+                const maxVisible = 2;
                 const visible = dayEvents.slice(0, maxVisible);
                 const overflow = Math.max(0, dayEvents.length - maxVisible);
                 return (
@@ -147,8 +146,14 @@ export function MonthView({
                       </span>
                     ))}
                     {overflow > 0 && (
-                      <span className="pl-1 font-mono text-[9px] text-fg-subtle sm:pl-1.5 sm:text-[10px]">
-                        + {overflow}개 더
+                      <span
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          onSelectDay(d);
+                        }}
+                        className="self-start cursor-pointer rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[9px] text-fg-muted transition hover:bg-fg/14 hover:text-fg sm:text-[10px]"
+                      >
+                        +{overflow}개
                       </span>
                     )}
                   </div>
@@ -156,11 +161,11 @@ export function MonthView({
               })()}
 
               {weight !== undefined && !muted && (
-                <div className="mt-1 flex items-center justify-end gap-1">
+                <div className="mt-1 flex max-w-full items-center justify-end gap-0.5 overflow-hidden">
                   {weightDelta !== null && Math.abs(weightDelta) >= 0.05 && (
                     <span
                       className={cn(
-                        "rounded-md px-1 py-0.5 font-mono text-[9px] tabular-nums",
+                        "shrink-0 rounded px-1 py-px font-mono text-[8px] tabular-nums sm:text-[9px]",
                         weightDelta > 0
                           ? "bg-red-500/10 text-red-500"
                           : "bg-emerald-500/10 text-emerald-600",
@@ -172,7 +177,7 @@ export function MonthView({
                     </span>
                   )}
                   <span
-                    className="rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted"
+                    className="shrink-0 truncate rounded-md bg-fg/8 px-1 py-px font-mono text-[9px] tabular-nums text-fg-muted sm:px-1.5 sm:py-0.5 sm:text-[10px]"
                     title="체중"
                   >
                     {weight.toFixed(1)}kg

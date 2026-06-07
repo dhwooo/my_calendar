@@ -90,14 +90,31 @@ export function WeightClient({ initialEntries }: { initialEntries: Entry[] }) {
               max="300"
               value={targetInput}
               onChange={(e) => setTargetInput(e.target.value)}
-              onBlur={() => saveTarget(targetInput)}
               onKeyDown={(e) => {
-                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                if (e.key === "Enter") saveTarget(targetInput);
               }}
               placeholder="75.0"
               className="h-7 w-20 rounded-md border border-border/60 bg-bg px-2 font-mono text-[12px] tabular-nums outline-none focus:border-accent/60"
             />
             <span className="font-mono text-[10px] text-fg-subtle">kg</span>
+            <button
+              onClick={() => saveTarget(targetInput)}
+              disabled={targetInput === (targetKg != null ? String(targetKg) : "")}
+              className="h-7 rounded-md bg-accent px-2.5 font-mono text-[10px] uppercase tracking-wider text-accent-fg transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              저장
+            </button>
+            {targetKg != null && (
+              <button
+                onClick={() => {
+                  setTargetInput("");
+                  saveTarget("");
+                }}
+                className="h-7 rounded-md border border-border/60 px-2 font-mono text-[10px] uppercase tracking-wider text-fg-muted hover:bg-bg-muted"
+              >
+                해제
+              </button>
+            )}
             <span className="ml-2 font-mono text-[10px] text-fg-subtle">
               최근 {Math.min(entries.length, 60)}개
             </span>
