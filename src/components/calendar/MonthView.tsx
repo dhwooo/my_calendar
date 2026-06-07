@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import {
   daysBetween,
+  eventOnDay,
   fmt,
   isSameDay,
   isSameMonth,
@@ -31,15 +32,7 @@ const WEEK = [
 ];
 
 function eventsOn(day: Date, events: EventDTO[]) {
-  const start = new Date(day);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(day);
-  end.setHours(23, 59, 59, 999);
-  return events.filter((e) => {
-    const es = new Date(e.start);
-    const ee = new Date(e.end);
-    return es <= end && ee > start;
-  });
+  return events.filter((e) => eventOnDay(e, day));
 }
 
 export function MonthView({

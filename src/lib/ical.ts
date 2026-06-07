@@ -92,7 +92,7 @@ function parseVEvents(ics: string): RawEvent[] {
     const rawKey = line.slice(0, colon);
     const value = line.slice(colon + 1);
     const [name, ...params] = rawKey.split(";");
-    const isDateOnly = params.some((p) => /VALUE=DATE\b/.test(p));
+    const isDateOnly = params.some((p) => p === "VALUE=DATE");
 
     switch (name) {
       case "UID":

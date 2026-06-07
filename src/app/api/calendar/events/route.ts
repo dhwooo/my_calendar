@@ -6,6 +6,9 @@ import { prisma } from "@/lib/db";
 import { pushCreate } from "@/lib/sync";
 import { fetchIcalEvents } from "@/lib/ical";
 
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
 const inputSchema = z.object({
   title: z.string().min(1),
   description: z.string().optional(),

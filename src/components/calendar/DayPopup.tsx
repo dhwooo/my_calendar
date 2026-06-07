@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { fmt } from "@/lib/date";
+import { eventOnDay, fmt } from "@/lib/date";
 import { getHoliday } from "@/lib/holidays";
 import type { EventDTO } from "@/types/calendar";
 
@@ -40,15 +40,7 @@ export function DayPopup({
   const day = date.getDay();
   const holiday = getHoliday(date);
   const dayEvents = events
-    .filter((e) => {
-      const es = new Date(e.start);
-      const ee = new Date(e.end);
-      const start = new Date(date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(date);
-      end.setHours(23, 59, 59, 999);
-      return es <= end && ee > start;
-    })
+    .filter((e) => eventOnDay(e, date))
     .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 
   const dayLabel =
