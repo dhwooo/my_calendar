@@ -48,34 +48,45 @@ function Card({
       : trend > 0
         ? TrendingUp
         : TrendingDown;
+  // 빠짐 = 파랑, 쪘음 = 빨강 (사용자 정의)
   const trendColor =
     trend === undefined || trend === 0
       ? "text-fg-subtle"
       : trend > 0
         ? "text-red-500"
-        : "text-emerald-500";
+        : "text-blue-500";
+  // 이전 대비 카드는 값 글자도 trendColor로
+  const valueColorClass =
+    trend !== undefined && trend !== 0 ? trendColor : "text-fg";
   return (
     <div
       className={cn(
-        "rounded-2xl border p-4",
+        "rounded-2xl border p-3 sm:p-4",
         accent
           ? "border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8"
           : "border-border/70 bg-bg-subtle/40",
       )}
     >
       <div className="flex items-center justify-between">
-        <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-fg-subtle">
+        <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-fg-subtle sm:text-[10px]">
           {label}
         </span>
         {trend !== undefined && (
-          <TrendIcon className={cn("h-3.5 w-3.5", trendColor)} />
+          <TrendIcon className={cn("h-4 w-4 sm:h-3.5 sm:w-3.5", trendColor)} />
         )}
       </div>
       <div className="mt-2 flex items-baseline gap-1">
-        <span className="text-[26px] font-semibold leading-none tracking-tight text-fg tabular-nums">
+        <span
+          className={cn(
+            "text-[28px] font-semibold leading-none tracking-tight tabular-nums sm:text-[26px]",
+            valueColorClass,
+          )}
+        >
           {value}
         </span>
-        <span className="font-mono text-[11px] text-fg-subtle">{unit}</span>
+        <span className="font-mono text-[12px] text-fg-subtle sm:text-[11px]">
+          {unit}
+        </span>
       </div>
     </div>
   );

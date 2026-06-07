@@ -6,12 +6,24 @@ import { cn } from "@/lib/utils";
 
 type Entry = { id: string; date: string; kg: number };
 
-export function WeightHistory({ entries }: { entries: Entry[] }) {
+export function WeightHistory({
+  entries,
+  embedded,
+}: {
+  entries: Entry[];
+  embedded?: boolean;
+}) {
   // entries are ascending; show newest first with delta vs previous (older).
   const reversed = [...entries].reverse();
 
   return (
-    <div className="rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
+    <div
+      className={cn(
+        embedded
+          ? "px-5"
+          : "rounded-2xl border border-border/70 bg-bg-subtle/40 p-5",
+      )}
+    >
       <h2 className="mb-3 text-[14px] font-medium tracking-tight text-fg">
         기록
       </h2>
@@ -27,15 +39,15 @@ export function WeightHistory({ entries }: { entries: Entry[] }) {
             return (
               <li key={e.id} className="flex items-center justify-between py-2.5">
                 <div className="flex items-baseline gap-3">
-                  <span className="text-[15px] font-medium text-fg tabular-nums">
+                  <span className="text-[17px] font-semibold text-fg tabular-nums sm:text-[15px] sm:font-medium">
                     {e.kg.toFixed(1)}
-                    <span className="ml-0.5 font-mono text-[11px] text-fg-subtle">
+                    <span className="ml-0.5 font-mono text-[12px] text-fg-subtle sm:text-[11px]">
                       kg
                     </span>
                   </span>
                   {delta !== null && <DeltaPill delta={delta} />}
                 </div>
-                <span className="font-mono text-[11px] text-fg-subtle">
+                <span className="font-mono text-[12px] text-fg-subtle sm:text-[11px]">
                   {format(new Date(e.date), "yyyy.M.d")}
                 </span>
               </li>
@@ -53,10 +65,10 @@ function DeltaPill({ delta }: { delta: number }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-mono text-[10px] tabular-nums",
+        "inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-mono text-[11px] tabular-nums sm:text-[10px]",
         rounded === 0 && "bg-bg-muted text-fg-subtle",
         rounded > 0 && "bg-red-500/10 text-red-600",
-        rounded < 0 && "bg-emerald-500/10 text-emerald-600",
+        rounded < 0 && "bg-blue-500/10 text-blue-600",
       )}
     >
       <Icon className="h-3 w-3" />

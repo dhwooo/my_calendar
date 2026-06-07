@@ -120,9 +120,10 @@ export function WeightClient({ initialEntries }: { initialEntries: Entry[] }) {
           </div>
         </div>
         <WeightChart entries={entries.slice(-60)} targetKg={targetKg} />
+        <div className="-mx-5 mt-4 border-t border-border/40 pt-4 sm:-mx-5">
+          <WeightHistory entries={entries} embedded />
+        </div>
       </div>
-
-      <WeightHistory entries={entries} />
     </div>
   );
 }
