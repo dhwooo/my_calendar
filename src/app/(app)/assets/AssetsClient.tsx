@@ -40,8 +40,7 @@ function getColor(category: string | null) {
 
 export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
   const { data, mutate } = useSWR<{ entries: Entry[] }>("/api/assets", {
-    fallbackData: { entries: initialEntries },
-    revalidateOnMount: false,
+    fallbackData: initialEntries.length > 0 ? { entries: initialEntries } : undefined,
   });
   const entries = data?.entries ?? [];
 

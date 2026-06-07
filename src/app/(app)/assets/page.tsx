@@ -1,22 +1,8 @@
-import { prisma } from "@/lib/db";
-import { requireUserId } from "@/lib/server-auth";
 import { MarketTicker } from "@/components/MarketTicker";
-import { AssetsClient, type Entry } from "./AssetsClient";
+import { AssetsClient } from "./AssetsClient";
 
-export default async function AssetsPage() {
-  const userId = await requireUserId();
-  const rows = await prisma.assetEntry.findMany({
-    where: { userId },
-    orderBy: { date: "desc" },
-  });
-  const initialEntries: Entry[] = rows.map((r) => ({
-    id: r.id,
-    date: r.date.toISOString(),
-    label: r.label,
-    amount: r.amount,
-    category: r.category,
-  }));
-
+// SSR DB 쿼리 제거 — 클라이언트 SWR이 /api/assets로 직접 fetch.
+export default function AssetsPage() {
   return (
     <div className="anim-fade-in">
       <div className="mx-auto max-w-4xl px-5 pt-6 sm:px-8 sm:pt-10">
@@ -32,7 +18,7 @@ export default async function AssetsPage() {
 
       <MarketTicker />
 
-      <AssetsClient initialEntries={initialEntries} />
+      <AssetsClient initialEntries={[]} />
     </div>
   );
 }

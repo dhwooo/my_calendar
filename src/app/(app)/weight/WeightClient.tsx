@@ -13,8 +13,7 @@ type ProfileResp = { user: { targetWeightKg: number | null } };
 
 export function WeightClient({ initialEntries }: { initialEntries: Entry[] }) {
   const { data, mutate } = useSWR<{ entries: Entry[] }>("/api/weight", {
-    fallbackData: { entries: initialEntries },
-    revalidateOnMount: false,
+    fallbackData: initialEntries.length > 0 ? { entries: initialEntries } : undefined,
   });
   const { data: profile, mutate: mutateProfile } = useSWR<ProfileResp>("/api/profile");
   const entries = data?.entries ?? [];

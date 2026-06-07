@@ -44,8 +44,7 @@ export function WikiClient({
   initialPages: WikiPageMeta[];
 }) {
   const { data, mutate } = useSWR<{ pages: WikiPageMeta[] }>("/api/wiki", {
-    fallbackData: { pages: initialPages },
-    revalidateOnMount: false,
+    fallbackData: initialPages.length > 0 ? { pages: initialPages } : undefined,
   });
   const pages = data?.pages ?? [];
   const tree = buildTree(pages);

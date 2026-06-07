@@ -1,19 +1,7 @@
-import { prisma } from "@/lib/db";
-import { requireUserId } from "@/lib/server-auth";
 import { WeightClient } from "./WeightClient";
 
-export default async function WeightPage() {
-  const userId = await requireUserId();
-  const rows = await prisma.weightEntry.findMany({
-    where: { userId },
-    orderBy: { date: "asc" },
-  });
-  const initialEntries = rows.map((r) => ({
-    id: r.id,
-    date: r.date.toISOString(),
-    kg: r.kg,
-  }));
-
+// SSR DB 쿼리 제거 — 클라이언트 SWR이 /api/weight로 직접 fetch.
+export default function WeightPage() {
   return (
     <div className="mx-auto max-w-4xl px-5 py-6 sm:px-8 sm:py-10 anim-fade-in">
       <div className="mb-6 flex items-baseline gap-3">
@@ -24,7 +12,7 @@ export default async function WeightPage() {
           weight
         </span>
       </div>
-      <WeightClient initialEntries={initialEntries} />
+      <WeightClient initialEntries={[]} />
     </div>
   );
 }
