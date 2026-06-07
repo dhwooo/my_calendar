@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 type Goal = {
@@ -152,6 +153,7 @@ function Card({
 }) {
   const [text, setText] = React.useState("");
   const done = goals.filter((g) => g.done).length;
+  const confirm = useConfirm();
 
   const add = async () => {
     const v = text.trim();
@@ -208,6 +210,13 @@ function Card({
     );
   };
   const remove = async (g: Goal) => {
+    const ok = await confirm({
+      title: "목표 삭제",
+      description: `"${g.text}" 목표를 삭제할까요?`,
+      confirmText: "삭제",
+      tone: "destructive",
+    });
+    if (!ok) return;
     await mutate<{ goals: Goal[] }>(
       cacheKey,
       async () => {
@@ -340,6 +349,7 @@ function TodoSection() {
   const todos = data?.todos ?? [];
   const [text, setText] = React.useState("");
   const doneCount = todos.filter((t) => t.done).length;
+  const confirm = useConfirm();
 
   const shift = (n: number) => {
     const d = new Date(date);
@@ -407,6 +417,13 @@ function TodoSection() {
     );
   };
   const remove = async (t: Todo) => {
+    const ok = await confirm({
+      title: "할 일 삭제",
+      description: `"${t.text}" 할 일을 삭제할까요?`,
+      confirmText: "삭제",
+      tone: "destructive",
+    });
+    if (!ok) return;
     await mutate(
       key,
       async () => {
