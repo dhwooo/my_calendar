@@ -119,35 +119,43 @@ export function MonthView({
                 </div>
               )}
 
-              <div className="flex min-w-0 flex-col gap-[2px] overflow-hidden">
-                {dayEvents.slice(0, 3).map((e) => (
-                  <span
-                    key={e.id}
-                    onClick={(ev) => {
-                      ev.stopPropagation();
-                      onSelectEvent(e);
-                    }}
-                    className="flex min-w-0 items-center gap-1 rounded-md bg-accent/10 px-1 py-0.5 text-[10px] text-fg transition hover:bg-accent/20 sm:gap-1.5 sm:bg-transparent sm:px-1.5 sm:text-[11px] sm:hover:bg-bg-muted"
-                  >
-                    <span className="hidden h-1.5 w-1.5 shrink-0 rounded-full bg-accent sm:block" />
-                    {!e.allDay && (
-                      <span className="hidden font-mono text-[10px] text-fg-subtle sm:inline">
-                        {fmt.time(new Date(e.start))}
+              {(() => {
+                const hasWeight = weight !== undefined && !muted;
+                const maxVisible = hasWeight ? 2 : 3;
+                const visible = dayEvents.slice(0, maxVisible);
+                const overflow = Math.max(0, dayEvents.length - maxVisible);
+                return (
+                  <div className="flex min-w-0 flex-1 flex-col gap-[2px] overflow-hidden">
+                    {visible.map((e) => (
+                      <span
+                        key={e.id}
+                        onClick={(ev) => {
+                          ev.stopPropagation();
+                          onSelectEvent(e);
+                        }}
+                        className="flex min-w-0 items-center gap-1 rounded-md bg-accent/10 px-1 py-0.5 text-[10px] text-fg transition hover:bg-accent/20 sm:gap-1.5 sm:bg-transparent sm:px-1.5 sm:text-[11px] sm:hover:bg-bg-muted"
+                      >
+                        <span className="hidden h-1.5 w-1.5 shrink-0 rounded-full bg-accent sm:block" />
+                        {!e.allDay && (
+                          <span className="hidden font-mono text-[10px] text-fg-subtle sm:inline">
+                            {fmt.time(new Date(e.start))}
+                          </span>
+                        )}
+                        <span className="min-w-0 flex-1 truncate">{e.title}</span>
+                      </span>
+                    ))}
+                    {overflow > 0 && (
+                      <span className="pl-1 font-mono text-[9px] text-fg-subtle sm:pl-1.5 sm:text-[10px]">
+                        + {overflow}개 더
                       </span>
                     )}
-                    <span className="min-w-0 flex-1 truncate">{e.title}</span>
-                  </span>
-                ))}
-                {dayEvents.length > 3 && (
-                  <span className="pl-1 font-mono text-[9px] text-fg-subtle sm:pl-2 sm:text-[10px]">
-                    +{dayEvents.length - 3}
-                  </span>
-                )}
-              </div>
+                  </div>
+                );
+              })()}
 
               {weight !== undefined && !muted && (
                 <span
-                  className="absolute bottom-1 right-1 rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted"
+                  className="mt-1 self-end rounded-md bg-fg/8 px-1.5 py-0.5 font-mono text-[10px] tabular-nums text-fg-muted"
                   title="체중"
                 >
                   {weight.toFixed(1)}kg
