@@ -157,24 +157,71 @@ function Card({
     const v = text.trim();
     if (!v) return;
     setText("");
-    await fetch("/api/goals", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ year, month, text: v }),
-    });
-    mutate(cacheKey);
+    const tempId = `tmp-${Date.now()}`;
+    const tempGoal: Goal = {
+      id: tempId,
+      year,
+      month,
+      text: v,
+      done: false,
+    };
+    await mutate<{ goals: Goal[] }>(
+      cacheKey,
+      async () => {
+        const res = await fetch("/api/goals", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ year, month, text: v }),
+        });
+        const j = await res.json();
+        return { goals: [...goals, j.goal] };
+      },
+      {
+        optimisticData: (prev) => ({
+          goals: [...(prev?.goals ?? []), tempGoal],
+        }),
+        rollbackOnError: true,
+        revalidate: false,
+      },
+    );
   };
   const toggle = async (g: Goal) => {
-    await fetch(`/api/goals/${g.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ done: !g.done }),
-    });
-    mutate(cacheKey);
+    await mutate<{ goals: Goal[] }>(
+      cacheKey,
+      async () => {
+        await fetch(`/api/goals/${g.id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ done: !g.done }),
+        });
+        return undefined;
+      },
+      {
+        optimisticData: (prev) => ({
+          goals: (prev?.goals ?? []).map((x) =>
+            x.id === g.id ? { ...x, done: !g.done } : x,
+          ),
+        }),
+        rollbackOnError: true,
+        revalidate: true,
+      },
+    );
   };
   const remove = async (g: Goal) => {
-    await fetch(`/api/goals/${g.id}`, { method: "DELETE" });
-    mutate(cacheKey);
+    await mutate<{ goals: Goal[] }>(
+      cacheKey,
+      async () => {
+        await fetch(`/api/goals/${g.id}`, { method: "DELETE" });
+        return undefined;
+      },
+      {
+        optimisticData: (prev) => ({
+          goals: (prev?.goals ?? []).filter((x) => x.id !== g.id),
+        }),
+        rollbackOnError: true,
+        revalidate: true,
+      },
+    );
   };
 
   return (
@@ -313,24 +360,65 @@ function TodoSection() {
     const v = text.trim();
     if (!v) return;
     setText("");
-    await fetch("/api/todos", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ date: dateStr, text: v }),
-    });
-    mutate(key);
+    const tempId = `tmp-${Date.now()}`;
+    const optimistic: Todo = {
+      id: tempId,
+      date: dateStr,
+      text: v,
+      done: false,
+      order: todos.length,
+    };
+    await mutate(
+      key,
+      async () => {
+        const res = await fetch("/api/todos", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ date: dateStr, text: v }),
+        });
+        const j = await res.json();
+        return { todos: [...todos, j.todo] };
+      },
+      {
+        optimisticData: { todos: [...todos, optimistic] },
+        rollbackOnError: true,
+        revalidate: false,
+      },
+    );
   };
   const toggle = async (t: Todo) => {
-    await fetch(`/api/todos/${t.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ done: !t.done }),
-    });
-    mutate(key);
+    await mutate(
+      key,
+      async () => {
+        await fetch(`/api/todos/${t.id}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ done: !t.done }),
+        });
+        return { todos: todos.map((x) => (x.id === t.id ? { ...x, done: !t.done } : x)) };
+      },
+      {
+        optimisticData: {
+          todos: todos.map((x) => (x.id === t.id ? { ...x, done: !t.done } : x)),
+        },
+        rollbackOnError: true,
+        revalidate: false,
+      },
+    );
   };
   const remove = async (t: Todo) => {
-    await fetch(`/api/todos/${t.id}`, { method: "DELETE" });
-    mutate(key);
+    await mutate(
+      key,
+      async () => {
+        await fetch(`/api/todos/${t.id}`, { method: "DELETE" });
+        return { todos: todos.filter((x) => x.id !== t.id) };
+      },
+      {
+        optimisticData: { todos: todos.filter((x) => x.id !== t.id) },
+        rollbackOnError: true,
+        revalidate: false,
+      },
+    );
   };
 
   return (
