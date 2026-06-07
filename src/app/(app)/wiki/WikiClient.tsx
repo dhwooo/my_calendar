@@ -53,15 +53,41 @@ export function WikiClient({
   const confirm = useConfirm();
 
   const [activeId, setActiveId] = React.useState<string | null>(null);
-  // Auto-select first page only on desktop (mobile starts on list view)
+  // Auto-select root page on desktop (mobile starts on list view)
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(min-width: 768px)").matches) {
-      if (!activeId && pages.length > 0) setActiveId(pages[0].id);
+      if (!activeId && pages.length > 0) {
+        const root = pages.find((p) => p.parentId === null);
+        setActiveId((root ?? pages[0]).id);
+      }
     }
   }, [pages, activeId]);
 
   const [expanded, setExpanded] = React.useState<Set<string>>(new Set());
+
+  // activeId 변경 시 조상 페이지 모두 자동 expand → 사이드바 트리에서 현재 위치 보이도록
+  React.useEffect(() => {
+    if (!activeId) return;
+    const ancestors = new Set<string>();
+    let cur = pages.find((p) => p.id === activeId)?.parentId ?? null;
+    while (cur) {
+      ancestors.add(cur);
+      cur = pages.find((p) => p.id === cur)?.parentId ?? null;
+    }
+    if (ancestors.size === 0) return;
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      let changed = false;
+      ancestors.forEach((a) => {
+        if (!next.has(a)) {
+          next.add(a);
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [activeId, pages]);
   function toggle(id: string) {
     const n = new Set(expanded);
     if (n.has(id)) n.delete(id);
