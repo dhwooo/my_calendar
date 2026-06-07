@@ -4,7 +4,6 @@ import { z } from "zod";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { pushCreate } from "@/lib/sync";
-import { fetchIcalEvents } from "@/lib/ical";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -32,20 +31,15 @@ export async function GET(req: Request) {
   const fromDate = new Date(from);
   const toDate = new Date(to);
 
-  const [events, user] = await Promise.all([
-    prisma.event.findMany({
-      where: {
-        userId: session.user.id,
-        start: { lte: toDate },
-        end: { gte: fromDate },
-      },
-      orderBy: { start: "asc" },
-    }),
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { icalUrl: true },
-    }),
-  ]);
+  // DB만 빠르게 반환. ICS는 별도 엔드포인트로 분리(/api/calendar/ical).
+  const events = await prisma.event.findMany({
+    where: {
+      userId: session.user.id,
+      start: { lte: toDate },
+      end: { gte: fromDate },
+    },
+    orderBy: { start: "asc" },
+  });
 
   const localEvents = events.map((e) => ({
     ...e,
@@ -53,20 +47,7 @@ export async function GET(req: Request) {
     end: e.end.toISOString(),
   }));
 
-  const force = searchParams.get("refresh") === "1";
-  const icalEvents = user?.icalUrl
-    ? await fetchIcalEvents(
-        user.icalUrl,
-        { start: fromDate, end: toDate },
-        { force },
-      )
-    : [];
-
-  return NextResponse.json({
-    events: [...localEvents, ...icalEvents].sort(
-      (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
-    ),
-  });
+  return NextResponse.json({ events: localEvents });
 }
 
 export async function POST(req: Request) {

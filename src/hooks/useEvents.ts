@@ -4,23 +4,39 @@ import useSWR from "swr";
 import type { EventDTO, EventInput } from "@/types/calendar";
 
 export function useEvents(range: { start: Date; end: Date }) {
-  const key = `/api/calendar/events?from=${range.start.toISOString()}&to=${range.end.toISOString()}`;
-  const { data, error, isLoading, mutate } = useSWR<{ events: EventDTO[] }>(key);
+  const qs = `from=${range.start.toISOString()}&to=${range.end.toISOString()}`;
+  const dbKey = `/api/calendar/events?${qs}`;
+  const icalKey = `/api/calendar/ical?${qs}`;
+
+  // DB 이벤트 — 빠름, 즉시 표시
+  const { data: dbData, mutate: mutateDb } = useSWR<{ events: EventDTO[] }>(dbKey);
+  // ICS 이벤트 — 늦음, 도착하면 합쳐 표시
+  const { data: icalData, mutate: mutateIcal } = useSWR<{ events: EventDTO[] }>(icalKey);
+
+  const dbEvents = dbData?.events ?? [];
+  const icalEvents = icalData?.events ?? [];
+
+  const events = [...dbEvents, ...icalEvents].sort(
+    (a, b) => new Date(a.start).getTime() - new Date(b.start).getTime(),
+  );
 
   async function refreshIcal() {
-    // Force-refresh: bypass server-side cache for ICS feed.
-    const res = await fetch(`${key}&refresh=1`);
+    const res = await fetch(`${icalKey}&refresh=1`);
     if (res.ok) {
       const fresh = (await res.json()) as { events: EventDTO[] };
-      await mutate(fresh, { revalidate: false });
+      await mutateIcal(fresh, { revalidate: false });
     }
   }
 
+  async function refresh() {
+    await Promise.all([mutateDb(), mutateIcal()]);
+  }
+
   return {
-    events: data?.events ?? [],
-    isLoading,
-    error,
-    refresh: mutate,
+    events,
+    isLoading: !dbData,
+    error: null,
+    refresh,
     refreshIcal,
   };
 }

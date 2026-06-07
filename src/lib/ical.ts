@@ -77,6 +77,18 @@ function parseVEvents(ics: string): RawEvent[] {
     }
     if (line === "END:VEVENT") {
       if (cur) {
+        // 묵시적 allDay 감지: VALUE=DATE는 아니지만 자정→자정 정확한 일(day) 배수
+        if (!cur.allDay && cur.start && cur.end) {
+          const s = cur.start;
+          const e = cur.end;
+          const atMidnight =
+            s.getHours() === 0 && s.getMinutes() === 0 && s.getSeconds() === 0 &&
+            e.getHours() === 0 && e.getMinutes() === 0 && e.getSeconds() === 0;
+          const dayMultiple = (e.getTime() - s.getTime()) % 86400000 === 0;
+          if (atMidnight && dayMultiple && e.getTime() > s.getTime()) {
+            cur.allDay = true;
+          }
+        }
         if (cur.allDay && cur.end) {
           cur.end = new Date(cur.end.getTime() - 1);
         }
