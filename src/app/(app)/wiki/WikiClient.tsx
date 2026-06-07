@@ -172,31 +172,6 @@ export function WikiClient({
               첫 페이지 만들기
             </button>
           )}
-          <button
-            onClick={async () => {
-              const res = await fetch("/api/wiki/seed/linux-master", {
-                method: "POST",
-              });
-              if (res.ok) await mutate();
-              else {
-                const j = await res.json().catch(() => null);
-                if (j?.reason === "already seeded" || j?.moved) {
-                  await mutate();
-                } else if (j?.error) {
-                  alert(j.error);
-                }
-              }
-            }}
-            className="mt-2 flex w-full items-center gap-2 rounded-lg border border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8 px-2.5 py-2.5 text-left text-[12px] text-fg transition hover:from-[rgb(var(--grad-1))]/12 hover:to-[rgb(var(--grad-3))]/12"
-          >
-            <span className="text-[16px]">🐧</span>
-            <span className="flex-1">
-              <span className="block font-medium">리눅스마스터 2급 2차</span>
-              <span className="block font-mono text-[10px] text-fg-subtle">
-                합격 플랜 가져오기
-              </span>
-            </span>
-          </button>
         </div>
       </aside>
 
@@ -351,7 +326,10 @@ function PageTree({
                 )}
               </button>
               <button
-                onClick={() => onSelect(p.id)}
+                onClick={() => {
+                  onSelect(p.id);
+                  if (hasChildren && !isOpen) onToggle(p.id);
+                }}
                 className="flex flex-1 items-center gap-1.5 truncate py-1 text-left"
               >
                 <span className="w-4 text-center">
