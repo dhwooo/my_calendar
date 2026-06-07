@@ -13,6 +13,7 @@ const inputSchema = z.object({
   end: z.string().datetime(),
   allDay: z.boolean().optional(),
   mood: z.string().nullable().optional(),
+  notifyMinutes: z.number().int().nullable().optional(),
 });
 
 type Ctx = { params: { id: string } };
@@ -43,6 +44,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
       end: new Date(data.end),
       allDay: data.allDay ?? false,
       mood: data.mood ?? null,
+      notifyMinutes: data.notifyMinutes ?? null,
+      // 알림 설정이 바뀌면 이미 보낸 표시를 초기화
+      notifiedAt:
+        data.notifyMinutes !== existing.notifyMinutes ? null : existing.notifiedAt,
     },
   });
 

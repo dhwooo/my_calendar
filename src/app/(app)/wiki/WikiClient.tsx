@@ -49,6 +49,7 @@ export function WikiClient({
   });
   const pages = data?.pages ?? [];
   const tree = buildTree(pages);
+  const studyPage = pages.find((p) => p.parentId === null && p.title === "공부");
 
   const [activeId, setActiveId] = React.useState<string | null>(null);
   // Auto-select first page only on desktop (mobile starts on list view)
@@ -122,6 +123,27 @@ export function WikiClient({
             <Plus className="h-3.5 w-3.5" />
           </button>
         </div>
+        {studyPage && (
+          <button
+            onClick={() => {
+              setActiveId(studyPage.id);
+              setExpanded(new Set([...expanded, studyPage.id]));
+            }}
+            className={cn(
+              "mx-1 mb-2 flex items-center gap-2 rounded-lg px-2 py-2 text-left text-[12px] transition",
+              activeId === studyPage.id
+                ? "bg-bg-muted text-fg"
+                : "border border-fg/10 bg-gradient-to-br from-[rgb(var(--grad-1))]/8 to-[rgb(var(--grad-3))]/8 text-fg hover:from-[rgb(var(--grad-1))]/14 hover:to-[rgb(var(--grad-3))]/14",
+            )}
+          >
+            <span className="text-[14px]">{studyPage.icon ?? "📚"}</span>
+            <span className="flex-1 font-medium">공부</span>
+            <span className="font-mono text-[9px] uppercase tracking-wider text-fg-subtle">
+              pin
+            </span>
+          </button>
+        )}
+
         <div className="flex-1 overflow-auto">
           <PageTree
             tree={tree}

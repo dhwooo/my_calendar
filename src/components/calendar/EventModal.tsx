@@ -31,6 +31,7 @@ type Props = {
     end: string;
     allDay?: boolean;
     mood?: string | null;
+    notifyMinutes?: number | null;
   }) => Promise<void>;
   onDelete?: () => Promise<void>;
 };
@@ -67,6 +68,9 @@ export function EventModal({
   const [endTime, setEndTime] = React.useState(fmt.timeInput(initialEnd));
   const [allDay, setAllDay] = React.useState(event?.allDay ?? false);
   const [mood, setMood] = React.useState<string | null>(event?.mood ?? null);
+  const [notifyMinutes, setNotifyMinutes] = React.useState<number | null>(
+    event?.notifyMinutes ?? null,
+  );
   const [saving, setSaving] = React.useState(false);
 
   React.useEffect(() => {
@@ -76,6 +80,7 @@ export function EventModal({
     setLocation(event?.location ?? "");
     setAllDay(event?.allDay ?? false);
     setMood(event?.mood ?? null);
+    setNotifyMinutes(event?.notifyMinutes ?? null);
     const s = event ? new Date(event.start) : initialStart;
     const e = event ? new Date(event.end) : initialEnd;
     setStartDate(fmt.dateInput(s));
@@ -103,6 +108,7 @@ export function EventModal({
         end: end.toISOString(),
         allDay,
         mood,
+        notifyMinutes,
       });
       onOpenChange(false);
     } finally {
@@ -201,6 +207,30 @@ export function EventModal({
             value={description}
             onChange={(e) => setDescription(e.target.value)}
           />
+
+          <div>
+            <label className="mb-1.5 block text-[11px] font-medium text-fg-muted">
+              알림
+            </label>
+            <select
+              value={notifyMinutes === null ? "" : String(notifyMinutes)}
+              onChange={(e) =>
+                setNotifyMinutes(e.target.value === "" ? null : Number(e.target.value))
+              }
+              className="h-10 w-full rounded-xl border border-border bg-bg-subtle/40 px-3 text-[14px] outline-none focus:border-accent/60 focus:bg-bg"
+            >
+              <option value="">알림 없음</option>
+              <option value="0">정각</option>
+              <option value="5">5분 전</option>
+              <option value="10">10분 전</option>
+              <option value="15">15분 전</option>
+              <option value="30">30분 전</option>
+              <option value="60">1시간 전</option>
+              <option value="120">2시간 전</option>
+              <option value="1440">1일 전</option>
+              <option value="2880">2일 전</option>
+            </select>
+          </div>
         </div>
 
         <DialogFooter>

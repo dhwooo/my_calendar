@@ -12,6 +12,7 @@ export type EventDTO = {
   allDay: boolean;
   color: string | null;
   mood: string | null;
+  notifyMinutes?: number | null;
 };
 
 export type EventInput = {
@@ -22,4 +23,5 @@ export type EventInput = {
   end: string;
   allDay?: boolean;
   mood?: string | null;
+  notifyMinutes?: number | null;
 };

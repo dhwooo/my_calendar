@@ -200,6 +200,10 @@ model Event {
   color       String?
   // Mood emoji, e.g. "😊"
   mood        String?
+  // 알림: 시작 N분 전. null = 알림 없음. 0 = 정각.
+  notifyMinutes Int?
+  // 마지막 알림 발송 시각 (중복 발송 방지)
+  notifiedAt    DateTime?
   // last successful sync timestamp from Google
   syncedAt    DateTime?
   updatedAt   DateTime @updatedAt

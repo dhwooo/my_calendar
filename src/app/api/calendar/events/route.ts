@@ -17,6 +17,7 @@ const inputSchema = z.object({
   end: z.string().datetime(),
   allDay: z.boolean().optional(),
   mood: z.string().nullable().optional(),
+  notifyMinutes: z.number().int().nullable().optional(),
 });
 
 export async function GET(req: Request) {
@@ -89,6 +90,7 @@ export async function POST(req: Request) {
       end: new Date(data.end),
       allDay: data.allDay ?? false,
       mood: data.mood ?? null,
+      notifyMinutes: data.notifyMinutes ?? null,
     },
   });
 
