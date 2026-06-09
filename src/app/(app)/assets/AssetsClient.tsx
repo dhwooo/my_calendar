@@ -6,8 +6,21 @@ import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { InvestmentClient } from "@/app/(app)/investment/InvestmentClient";
 import { cn } from "@/lib/utils";
+
+type TossHolding = {
+  symbol: string;
+  name?: string;
+  quantity: number;
+  evalAmount?: number;
+  profit?: number;
+  profitRate?: number;
+};
+type TossResp = {
+  connected: boolean;
+  error?: string;
+  holdings: TossHolding[];
+};
 
 export type Entry = {
   id: string;
@@ -43,7 +56,21 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
   const { data, mutate } = useSWR<{ entries: Entry[] }>("/api/assets", {
     fallbackData: initialEntries.length > 0 ? { entries: initialEntries } : undefined,
   });
-  const entries = data?.entries ?? [];
+  const { data: tossData } = useSWR<TossResp>("/api/finance/toss/holdings");
+  const manualEntries = data?.entries ?? [];
+
+  // 토스 보유 종목 → 가상 자산 항목으로 변환 (read-only)
+  const tossEntries: Entry[] = (tossData?.holdings ?? [])
+    .filter((h) => (h.evalAmount ?? 0) > 0)
+    .map((h) => ({
+      id: `toss:${h.symbol}`,
+      date: new Date().toISOString(),
+      label: h.name ?? h.symbol,
+      amount: Math.round(h.evalAmount ?? 0),
+      category: "투자",
+    }));
+
+  const entries = [...tossEntries, ...manualEntries];
 
   const total = entries.reduce((s, e) => s + e.amount, 0);
   const byCategory = entries.reduce<Record<string, number>>((acc, e) => {
@@ -94,6 +121,7 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
   }
 
   async function remove(id: string) {
+    if (id.startsWith("toss:")) return; // 토스 자동 항목은 삭제 불가
     if (!confirm("이 자산을 삭제할까요?")) return;
     await mutate(
       async () => {
@@ -263,21 +291,25 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
                   <span className="text-[15px] font-semibold text-fg tabular-nums">
                     {won(e.amount)}
                   </span>
-                  <button
-                    onClick={() => remove(e.id)}
-                    className="rounded-md p-1.5 text-fg-subtle opacity-0 transition group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500"
-                    aria-label="삭제"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  {!e.id.startsWith("toss:") ? (
+                    <button
+                      onClick={() => remove(e.id)}
+                      className="rounded-md p-1.5 text-fg-subtle opacity-0 transition group-hover:opacity-100 hover:bg-red-500/10 hover:text-red-500"
+                      aria-label="삭제"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  ) : (
+                    <span className="rounded-full bg-emerald-500/10 px-1.5 py-0.5 font-mono text-[9px] text-emerald-600">
+                      TOSS
+                    </span>
+                  )}
                 </div>
               </li>
             ))}
           </ul>
         )}
       </div>
-
-      <InvestmentClient embedded />
     </div>
   );
 }
