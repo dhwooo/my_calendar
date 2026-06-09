@@ -519,12 +519,12 @@ function TossCredentialsCard({
       {connected && !open && (
         <div className="space-y-2">
           <div className="font-mono text-[11px] text-fg-muted">
-            <span className="text-fg-subtle">client_id </span>
+            <span className="text-fg-subtle">API Key </span>
             <span className="tabular-nums">{maskedId}</span>
           </div>
           {accountNumber && (
             <div className="font-mono text-[11px] text-fg-muted">
-              <span className="text-fg-subtle">account </span>
+              <span className="text-fg-subtle">계좌 </span>
               <span className="tabular-nums">{accountNumber}</span>
             </div>
           )}
@@ -550,25 +550,44 @@ function TossCredentialsCard({
 
       {(!connected || open) && (
         <div className="space-y-2">
-          <Input
-            placeholder={connected ? "새 client_id (변경 시만)" : "tsck_live_..."}
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
-            className="h-10 rounded-xl text-[12px]"
-          />
-          <Input
-            type="password"
-            placeholder={connected ? "새 client_secret (변경 시만)" : "client_secret"}
-            value={clientSecret}
-            onChange={(e) => setClientSecret(e.target.value)}
-            className="h-10 rounded-xl text-[12px]"
-          />
-          <Input
-            placeholder="계좌번호 (X-Tossinvest-Account)"
-            value={acct}
-            onChange={(e) => setAcct(e.target.value)}
-            className="h-10 rounded-xl text-[12px]"
-          />
+          <div>
+            <label className="mb-1 block text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+              API Key
+            </label>
+            <Input
+              placeholder={connected ? "변경 시만 입력" : "tsck_live_..."}
+              value={clientId}
+              onChange={(e) => setClientId(e.target.value)}
+              className="h-10 rounded-xl text-[12px]"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+              Secret Key
+            </label>
+            <Input
+              type="password"
+              placeholder={connected ? "변경 시만 입력" : "secret"}
+              value={clientSecret}
+              onChange={(e) => setClientSecret(e.target.value)}
+              className="h-10 rounded-xl text-[12px]"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
+              계좌번호 (선택 — 비우면 자동 조회)
+            </label>
+            <Input
+              placeholder="비워두면 전체 계좌 자동 인식"
+              value={acct}
+              onChange={(e) => setAcct(e.target.value)}
+              className="h-10 rounded-xl text-[12px]"
+            />
+            <p className="mt-1 font-mono text-[9px] text-fg-subtle">
+              API 키만으로 본인 계좌 자동 조회. 특정 계좌만 보려면 쉼표로 구분
+              입력.
+            </p>
+          </div>
           {error && (
             <p className="font-mono text-[10px] text-red-500">{error}</p>
           )}

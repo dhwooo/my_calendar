@@ -28,12 +28,12 @@ export async function GET() {
   }
 
   try {
-    const { summary, holdings } = await fetchTossPortfolio({
+    const { summary, holdings, accounts } = await fetchTossPortfolio({
       clientId: user.tossClientId,
       clientSecret: user.tossClientSecret,
       accountNumber: user.tossAccountNumber,
     });
-    return NextResponse.json({ connected: true, summary, holdings });
+    return NextResponse.json({ connected: true, summary, holdings, accounts });
   } catch (err) {
     return NextResponse.json(
       {

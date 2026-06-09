@@ -107,14 +107,44 @@ export type TossAccountSummary = {
  * 토스증권 API 응답 스키마가 공식 OpenAPI JSON 기준이라
  * 필드 매핑은 첫 실제 응답 후 확정 필요 (스키마 노출 시 보완).
  */
-export async function fetchTossPortfolio(creds: Creds): Promise<{
-  summary: TossAccountSummary;
-  holdings: TossHolding[];
-}> {
-  // ⚠ 공식 OpenAPI JSON이 SPA에서만 로드되어 정확한 path/필드명을 잡지 못한 상태.
-  // 가장 가능성 높은 후보 경로 두 개를 시도 → 첫 200 응답을 사용.
-  const candidates = ["/v1/accounts/holdings", "/v1/account/holdings"];
+/**
+ * GET /v1/accounts — 본인 계좌 목록.
+ * client credentials만으로 호출 가능. account 헤더 불필요.
+ */
+async function fetchAccountList(creds: Creds): Promise<string[]> {
+  const candidates = ["/v1/accounts", "/v1/account"];
+  let raw: unknown = null;
+  let lastErr: Error | null = null;
+  for (const p of candidates) {
+    try {
+      raw = await tossFetch<unknown>(p, creds, { needsAccount: false });
+      break;
+    } catch (err) {
+      lastErr = err as Error;
+    }
+  }
+  if (raw == null) throw lastErr ?? new Error("계좌 목록 조회 실패");
 
+  const obj = raw as Record<string, unknown>;
+  const list = (obj.accounts ??
+    obj.items ??
+    obj.data ??
+    (Array.isArray(raw) ? raw : [])) as Record<string, unknown>[];
+  return list
+    .map(
+      (a) =>
+        (a.accountNumber ?? a.number ?? a.id ?? a.accountId) as
+          | string
+          | undefined,
+    )
+    .filter((v): v is string => typeof v === "string" && v.length > 0);
+}
+
+async function fetchOneAccountPortfolio(
+  creds: Creds,
+): Promise<{ summary: TossAccountSummary; holdings: TossHolding[] }> {
+  // /asset#getholdings 기반
+  const candidates = ["/v1/holdings", "/v1/assets/holdings", "/v1/accounts/holdings"];
   let raw: unknown = null;
   let lastErr: Error | null = null;
   for (const p of candidates) {
@@ -127,7 +157,6 @@ export async function fetchTossPortfolio(creds: Creds): Promise<{
   }
   if (raw == null) throw lastErr ?? new Error("토스 API 응답 없음");
 
-  // 응답 구조 모르므로 안전한 형태로 추출.
   const obj = raw as Record<string, unknown>;
   const list =
     (obj.holdings as unknown[]) ??
@@ -159,4 +188,73 @@ export async function fetchTossPortfolio(creds: Creds): Promise<{
   };
 
   return { summary, holdings };
+}
+
+/**
+ * 여러 계좌 (CSV로 저장된 accountNumber)를 모두 조회해서 합산.
+ * 보유 종목은 같은 심볼끼리 수량/평가금액 합치고 평단은 가중평균.
+ */
+export async function fetchTossPortfolio(creds: Creds): Promise<{
+  summary: TossAccountSummary;
+  holdings: TossHolding[];
+  accounts: string[];
+}> {
+  // 계좌번호 미입력이면 /accounts 자동 조회. 입력 시(CSV) 그대로 사용.
+  let accounts = (creds.accountNumber ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (accounts.length === 0) {
+    accounts = await fetchAccountList(creds);
+  }
+  if (accounts.length === 0) {
+    throw new Error("연결된 계좌가 없어요.");
+  }
+
+  const results = await Promise.all(
+    accounts.map((acct) =>
+      fetchOneAccountPortfolio({ ...creds, accountNumber: acct }),
+    ),
+  );
+
+  // 합산
+  const summary: TossAccountSummary = {
+    totalAsset: 0,
+    cashBalance: 0,
+    evalAmount: 0,
+    totalProfit: 0,
+  };
+  const bySymbol = new Map<string, TossHolding>();
+  for (const r of results) {
+    summary.totalAsset = (summary.totalAsset ?? 0) + (r.summary.totalAsset ?? 0);
+    summary.cashBalance = (summary.cashBalance ?? 0) + (r.summary.cashBalance ?? 0);
+    summary.evalAmount = (summary.evalAmount ?? 0) + (r.summary.evalAmount ?? 0);
+    summary.totalProfit = (summary.totalProfit ?? 0) + (r.summary.totalProfit ?? 0);
+    for (const h of r.holdings) {
+      const ex = bySymbol.get(h.symbol);
+      if (!ex) {
+        bySymbol.set(h.symbol, { ...h });
+      } else {
+        const qty = ex.quantity + h.quantity;
+        const avg =
+          ex.averagePrice != null && h.averagePrice != null && qty > 0
+            ? (ex.averagePrice * ex.quantity + h.averagePrice * h.quantity) / qty
+            : (ex.averagePrice ?? h.averagePrice);
+        bySymbol.set(h.symbol, {
+          ...ex,
+          quantity: qty,
+          averagePrice: avg,
+          evalAmount: (ex.evalAmount ?? 0) + (h.evalAmount ?? 0),
+          profit: (ex.profit ?? 0) + (h.profit ?? 0),
+        });
+      }
+    }
+  }
+  if (summary.evalAmount && summary.totalProfit != null) {
+    summary.totalProfitRate =
+      summary.evalAmount > 0
+        ? (summary.totalProfit / (summary.evalAmount - summary.totalProfit)) * 100
+        : 0;
+  }
+  return { summary, holdings: Array.from(bySymbol.values()), accounts };
 }
