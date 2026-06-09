@@ -573,21 +573,10 @@ function TossCredentialsCard({
               className="h-10 rounded-xl text-[12px]"
             />
           </div>
-          <div>
-            <label className="mb-1 block text-[10px] font-mono uppercase tracking-wider text-fg-subtle">
-              계좌번호 (선택 — 비우면 자동 조회)
-            </label>
-            <Input
-              placeholder="비워두면 전체 계좌 자동 인식"
-              value={acct}
-              onChange={(e) => setAcct(e.target.value)}
-              className="h-10 rounded-xl text-[12px]"
-            />
-            <p className="mt-1 font-mono text-[9px] text-fg-subtle">
-              API 키만으로 본인 계좌 자동 조회. 특정 계좌만 보려면 쉼표로 구분
-              입력.
-            </p>
-          </div>
+          <p className="font-mono text-[10px] leading-relaxed text-fg-subtle">
+            계좌번호는 자동 조회됩니다. API/Secret Key만 입력하면 본인 모든 계좌의
+            보유 종목이 합산되어 표시돼요.
+          </p>
           {error && (
             <p className="font-mono text-[10px] text-red-500">{error}</p>
           )}
