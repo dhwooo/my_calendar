@@ -56,7 +56,8 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
   const { data, mutate } = useSWR<{ entries: Entry[] }>("/api/assets", {
     fallbackData: initialEntries.length > 0 ? { entries: initialEntries } : undefined,
   });
-  const { data: tossData } = useSWR<TossResp>("/api/finance/toss/holdings");
+  const { data: tossData, error: tossError, isLoading: tossLoading } =
+    useSWR<TossResp>("/api/finance/toss/holdings");
   const manualEntries = data?.entries ?? [];
 
   // 토스 보유 종목 → 가상 자산 항목으로 변환 (read-only)
@@ -185,6 +186,8 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
       {/* Toss 상태 배너 */}
       <TossStatus
         data={tossData}
+        loading={tossLoading}
+        swrError={tossError}
         rawCount={tossData?.holdings?.length ?? 0}
         mappedCount={tossEntries.length}
       />
@@ -389,14 +392,47 @@ function Donut({
 
 function TossStatus({
   data,
+  loading,
+  swrError,
   rawCount,
   mappedCount,
 }: {
   data: TossResp | undefined;
+  loading: boolean;
+  swrError: unknown;
   rawCount: number;
   mappedCount: number;
 }) {
-  if (!data) return null; // 로딩 중
+  // SWR 자체가 실패 (네트워크/401/500 등) — 라우트가 200을 안 줬을 때
+  if (swrError) {
+    const msg = swrError instanceof Error ? swrError.message : String(swrError);
+    return (
+      <div className="mt-5 rounded-xl border border-rose-500/40 bg-rose-500/5 px-4 py-3 text-[12px]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-md bg-rose-500/20 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-rose-500">
+            TOSS · 요청 실패
+          </span>
+          <span className="font-medium text-fg">
+            /api/finance/toss/holdings 호출 실패
+          </span>
+        </div>
+        <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded-md bg-bg-muted/60 p-2 font-mono text-[10px] text-fg-muted">
+          {msg}
+        </pre>
+      </div>
+    );
+  }
+
+  if (loading || !data) {
+    return (
+      <div className="mt-5 flex items-center gap-3 rounded-xl border border-border/70 bg-bg-subtle/40 px-4 py-3 text-[12px]">
+        <span className="rounded-md bg-bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-fg-muted">
+          TOSS
+        </span>
+        <span className="text-fg-muted">토스 연동 상태 확인 중…</span>
+      </div>
+    );
+  }
 
   // 미연결
   if (!data.connected) {
