@@ -182,6 +182,13 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
         )}
       </div>
 
+      {/* Toss 상태 배너 */}
+      <TossStatus
+        data={tossData}
+        rawCount={tossData?.holdings?.length ?? 0}
+        mappedCount={tossEntries.length}
+      />
+
       {/* Input */}
       <div className="mt-5 rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
         <div className="mb-3 flex items-baseline justify-between">
@@ -376,6 +383,83 @@ function Donut({
           {wonShort(total)}
         </span>
       </div>
+    </div>
+  );
+}
+
+function TossStatus({
+  data,
+  rawCount,
+  mappedCount,
+}: {
+  data: TossResp | undefined;
+  rawCount: number;
+  mappedCount: number;
+}) {
+  if (!data) return null; // 로딩 중
+
+  // 미연결
+  if (!data.connected) {
+    return (
+      <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-border/70 bg-bg-subtle/40 px-4 py-3 text-[12px]">
+        <span className="rounded-md bg-bg-muted px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-fg-muted">
+          TOSS
+        </span>
+        <span className="text-fg-muted">
+          토스증권 미연결 — 프로필에서 API 키를 저장하세요.
+        </span>
+        <a
+          href="/profile"
+          className="ml-auto rounded-md border border-border px-2 py-1 text-[11px] font-medium text-fg hover:bg-bg-muted"
+        >
+          프로필 열기
+        </a>
+      </div>
+    );
+  }
+
+  // 에러
+  if (data.error) {
+    return (
+      <div className="mt-5 rounded-xl border border-rose-500/40 bg-rose-500/5 px-4 py-3 text-[12px]">
+        <div className="flex items-center gap-2">
+          <span className="rounded-md bg-rose-500/20 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-rose-500">
+            TOSS · 오류
+          </span>
+          <span className="font-medium text-fg">토스 API 호출 실패</span>
+        </div>
+        <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap break-all rounded-md bg-bg-muted/60 p-2 font-mono text-[10px] text-fg-muted">
+          {data.error}
+        </pre>
+      </div>
+    );
+  }
+
+  // 연결됐는데 표시되는 항목이 0
+  if (mappedCount === 0) {
+    return (
+      <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-amber-500/40 bg-amber-500/5 px-4 py-3 text-[12px]">
+        <span className="rounded-md bg-amber-500/20 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-amber-600">
+          TOSS
+        </span>
+        <span className="text-fg-muted">
+          {rawCount === 0
+            ? "연결됐지만 보유 종목이 없어요."
+            : `보유 종목 ${rawCount}개를 받았지만 평가금액(evalAmount)이 0/누락이라 표시할 수 없어요.`}
+        </span>
+      </div>
+    );
+  }
+
+  // 정상
+  return (
+    <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 px-4 py-3 text-[12px]">
+      <span className="rounded-md bg-emerald-500/20 px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wider text-emerald-600">
+        TOSS · 연결됨
+      </span>
+      <span className="text-fg-muted">
+        토스증권 보유 종목 {mappedCount}개를 자동으로 합산하고 있어요.
+      </span>
     </div>
   );
 }
