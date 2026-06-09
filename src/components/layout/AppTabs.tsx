@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BookText,
   CalendarDays,
+  LineChart,
   MessageCircle,
   ScaleIcon,
   Target,
@@ -24,6 +25,7 @@ const TABS: Tab[] = [
   { href: "/goals", label: "목표", icon: Target },
   { href: "/weight", label: "체중", icon: ScaleIcon },
   { href: "/assets", label: "자산", icon: Wallet },
+  { href: "/investment", label: "투자", icon: LineChart },
   { href: "/board", label: "게시판", icon: MessageCircle },
 ];
 
@@ -60,7 +62,7 @@ export function MobileTabBar() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-border/60 bg-bg/85 backdrop-blur-xl md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="mx-auto grid max-w-md grid-cols-6">
+      <div className="mx-auto grid max-w-md grid-cols-7">
         {TABS.map((t) => {
           const active = pathname?.startsWith(t.href);
           return (

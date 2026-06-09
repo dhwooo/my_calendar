@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-const PROTECTED = ["/calendar", "/wiki", "/goals", "/weight", "/assets", "/board", "/profile"];
+const PROTECTED = ["/calendar", "/wiki", "/goals", "/weight", "/assets", "/investment", "/board", "/profile"];
 
 export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -30,6 +30,7 @@ export const config = {
     "/goals/:path*",
     "/weight/:path*",
     "/assets/:path*",
+    "/investment/:path*",
     "/board/:path*",
     "/profile/:path*",
   ],

@@ -20,6 +20,8 @@ export type Profile = {
     icalUrl: string | null;
     targetWeightKg?: number | null;
     boardNotify?: boolean;
+    tossClientId?: string | null;
+    tossAccountNumber?: string | null;
   };
   googleConnected: boolean;
 };
@@ -320,6 +322,13 @@ export function ProfileClient({
         )}
       </div>
 
+      <TossCredentialsCard
+        connected={!!data?.user.tossClientId}
+        clientIdMasked={data?.user.tossClientId ?? null}
+        accountNumber={data?.user.tossAccountNumber ?? null}
+        onSaved={() => mutate()}
+      />
+
       <div className="mt-5 rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
         <div className="mb-1 flex items-center justify-between">
           <span className="text-[14px] font-medium text-fg">
@@ -412,6 +421,185 @@ export function ProfileClient({
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TossCredentialsCard({
+  connected,
+  clientIdMasked,
+  accountNumber,
+  onSaved,
+}: {
+  connected: boolean;
+  clientIdMasked: string | null;
+  accountNumber: string | null;
+  onSaved: () => void | Promise<void>;
+}) {
+  const [open, setOpen] = React.useState(false);
+  const [clientId, setClientId] = React.useState("");
+  const [clientSecret, setClientSecret] = React.useState("");
+  const [acct, setAcct] = React.useState("");
+  const [saving, setSaving] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    setAcct(accountNumber ?? "");
+  }, [accountNumber]);
+
+  async function save() {
+    setSaving(true);
+    setError(null);
+    try {
+      const body: Record<string, string | null> = {};
+      if (clientId) body.tossClientId = clientId;
+      if (clientSecret) body.tossClientSecret = clientSecret;
+      if (acct !== (accountNumber ?? "")) body.tossAccountNumber = acct || null;
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error("저장 실패");
+      setClientId("");
+      setClientSecret("");
+      setOpen(false);
+      await onSaved();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function disconnect() {
+    setSaving(true);
+    try {
+      await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          tossClientId: null,
+          tossClientSecret: null,
+          tossAccountNumber: null,
+        }),
+      });
+      await onSaved();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const maskedId =
+    clientIdMasked && clientIdMasked.length > 8
+      ? `${clientIdMasked.slice(0, 6)}…${clientIdMasked.slice(-4)}`
+      : clientIdMasked ?? "";
+
+  return (
+    <div className="mt-5 rounded-2xl border border-border/70 bg-bg-subtle/40 p-5">
+      <div className="mb-1 flex items-center justify-between">
+        <span className="text-[14px] font-medium text-fg">
+          토스증권 (투자 연동)
+        </span>
+        <span
+          className={
+            connected
+              ? "font-mono text-[10px] text-emerald-600"
+              : "font-mono text-[10px] text-fg-subtle"
+          }
+        >
+          {connected ? "● 연결됨" : "○ 미연결"}
+        </span>
+      </div>
+      <p className="mb-3 font-mono text-[10px] leading-relaxed text-fg-subtle">
+        토스증권 OpenAPI Client ID/Secret 으로 본인 보유 종목 표시. 시크릿은
+        서버에만 저장되고 클라이언트엔 노출되지 않아요.
+      </p>
+
+      {connected && !open && (
+        <div className="space-y-2">
+          <div className="font-mono text-[11px] text-fg-muted">
+            <span className="text-fg-subtle">client_id </span>
+            <span className="tabular-nums">{maskedId}</span>
+          </div>
+          {accountNumber && (
+            <div className="font-mono text-[11px] text-fg-muted">
+              <span className="text-fg-subtle">account </span>
+              <span className="tabular-nums">{accountNumber}</span>
+            </div>
+          )}
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setOpen(true)}
+              className="h-9 flex-1 rounded-xl text-[12px]"
+            >
+              자격증명 수정
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={disconnect}
+              disabled={saving}
+              className="h-9 rounded-xl text-[12px] text-red-500 hover:bg-red-500/10"
+            >
+              연결 해제
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {(!connected || open) && (
+        <div className="space-y-2">
+          <Input
+            placeholder={connected ? "새 client_id (변경 시만)" : "tsck_live_..."}
+            value={clientId}
+            onChange={(e) => setClientId(e.target.value)}
+            className="h-10 rounded-xl text-[12px]"
+          />
+          <Input
+            type="password"
+            placeholder={connected ? "새 client_secret (변경 시만)" : "client_secret"}
+            value={clientSecret}
+            onChange={(e) => setClientSecret(e.target.value)}
+            className="h-10 rounded-xl text-[12px]"
+          />
+          <Input
+            placeholder="계좌번호 (X-Tossinvest-Account)"
+            value={acct}
+            onChange={(e) => setAcct(e.target.value)}
+            className="h-10 rounded-xl text-[12px]"
+          />
+          {error && (
+            <p className="font-mono text-[10px] text-red-500">{error}</p>
+          )}
+          <div className="flex gap-2 pt-1">
+            <Button
+              onClick={save}
+              disabled={
+                saving ||
+                (!clientId && !clientSecret && acct === (accountNumber ?? ""))
+              }
+              className="h-10 flex-1 rounded-xl"
+            >
+              {saving ? "저장 중..." : "저장"}
+            </Button>
+            {open && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setOpen(false);
+                  setClientId("");
+                  setClientSecret("");
+                  setError(null);
+                }}
+                className="h-10 rounded-xl"
+              >
+                취소
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

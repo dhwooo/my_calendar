@@ -16,6 +16,9 @@ const schema = z.object({
     .optional(),
   targetWeightKg: z.number().min(20).max(300).nullable().optional(),
   boardNotify: z.boolean().optional(),
+  tossClientId: z.string().max(200).nullable().optional(),
+  tossClientSecret: z.string().max(500).nullable().optional(),
+  tossAccountNumber: z.string().max(50).nullable().optional(),
 });
 
 export async function GET() {
@@ -33,6 +36,9 @@ export async function GET() {
       icalUrl: true,
       targetWeightKg: true,
       boardNotify: true,
+      tossClientId: true,
+      tossAccountNumber: true,
+      // tossClientSecret 은 응답에 포함 X (마스킹)
     },
   });
   const google = await prisma.account.findFirst({
@@ -56,6 +62,9 @@ export async function PATCH(req: Request) {
     icalUrl?: string | null;
     targetWeightKg?: number | null;
     boardNotify?: boolean;
+    tossClientId?: string | null;
+    tossClientSecret?: string | null;
+    tossAccountNumber?: string | null;
   } = {};
   if (parsed.data.name) updates.name = parsed.data.name;
   if (parsed.data.icalUrl !== undefined) updates.icalUrl = parsed.data.icalUrl;
@@ -63,6 +72,12 @@ export async function PATCH(req: Request) {
     updates.targetWeightKg = parsed.data.targetWeightKg;
   if (parsed.data.boardNotify !== undefined)
     updates.boardNotify = parsed.data.boardNotify;
+  if (parsed.data.tossClientId !== undefined)
+    updates.tossClientId = parsed.data.tossClientId;
+  if (parsed.data.tossClientSecret !== undefined)
+    updates.tossClientSecret = parsed.data.tossClientSecret;
+  if (parsed.data.tossAccountNumber !== undefined)
+    updates.tossAccountNumber = parsed.data.tossAccountNumber;
 
   if (parsed.data.imageDataUrl) {
     const match = parsed.data.imageDataUrl.match(

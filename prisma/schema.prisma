@@ -54,6 +54,10 @@ model User {
   targetWeightKg Float?
   // 공용 게시판 새 글 알림 받기
   boardNotify Boolean @default(true)
+  // 토스증권 OpenAPI 인증 (각 유저별 개인 계좌)
+  tossClientId      String?
+  tossClientSecret  String?
+  tossAccountNumber String?
   // Notion Integration internal token + chosen workspace name (display).
   notionToken     String?
   notionWorkspace String?
