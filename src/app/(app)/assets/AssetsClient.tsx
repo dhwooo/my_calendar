@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { InvestmentClient } from "@/app/(app)/investment/InvestmentClient";
 import { cn } from "@/lib/utils";
 
 export type Entry = {
@@ -275,6 +276,8 @@ export function AssetsClient({ initialEntries }: { initialEntries: Entry[] }) {
           </ul>
         )}
       </div>
+
+      <InvestmentClient embedded />
     </div>
   );
 }

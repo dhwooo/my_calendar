@@ -35,13 +35,44 @@ type Resp = {
 const krw = (n?: number) =>
   n == null ? "—" : new Intl.NumberFormat("ko-KR").format(Math.round(n));
 
-export function InvestmentClient() {
+export function InvestmentClient({ embedded }: { embedded?: boolean } = {}) {
   const { data, mutate, isLoading } = useSWR<Resp>("/api/finance/toss/holdings");
 
   if (!data && isLoading) {
     return (
-      <div className="flex h-[40vh] items-center justify-center font-mono text-[11px] text-fg-subtle">
+      <div className="flex items-center justify-center py-8 font-mono text-[11px] text-fg-subtle">
         loading...
+      </div>
+    );
+  }
+
+  const body = (
+    <>
+      {!data?.connected ? (
+        <ConnectPrompt />
+      ) : data.error ? (
+        <ErrorCard error={data.error} onRetry={() => mutate()} />
+      ) : (
+        <>
+          <Summary summary={data.summary} />
+          <Holdings holdings={data.holdings} onRefresh={() => mutate()} />
+        </>
+      )}
+    </>
+  );
+
+  if (embedded) {
+    return (
+      <div className="mt-6">
+        <div className="mb-3 flex items-baseline gap-2 px-1">
+          <h2 className="text-[18px] font-semibold tracking-tight text-fg">
+            투자
+          </h2>
+          <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-fg-subtle">
+            toss
+          </span>
+        </div>
+        {body}
       </div>
     );
   }
@@ -56,17 +87,7 @@ export function InvestmentClient() {
           investment
         </span>
       </div>
-
-      {!data?.connected ? (
-        <ConnectPrompt />
-      ) : data.error ? (
-        <ErrorCard error={data.error} onRetry={() => mutate()} />
-      ) : (
-        <>
-          <Summary summary={data.summary} />
-          <Holdings holdings={data.holdings} onRefresh={() => mutate()} />
-        </>
-      )}
+      {body}
     </div>
   );
 }
