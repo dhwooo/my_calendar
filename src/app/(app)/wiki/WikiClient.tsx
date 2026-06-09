@@ -1,7 +1,17 @@
 "use client";
 
 import * as React from "react";
-import useSWR from "swr";
+import useSWR, { preload, mutate as globalMutate } from "swr";
+
+const swrFetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`${r.status}`);
+    return r.json();
+  });
+
+function prefetchPage(id: string) {
+  preload(`/api/wiki/${id}`, swrFetcher);
+}
 import {
   ChevronRight,
   ChevronDown,
@@ -94,36 +104,27 @@ export function WikiClient({
     setExpanded(n);
   }
 
+  const [creating, setCreating] = React.useState(false);
   async function createPage(parentId: string | null = null) {
-    const tempId = `tmp-${Date.now()}`;
-    const optimistic: WikiPageMeta = {
-      id: tempId,
-      parentId,
-      title: "새 페이지",
-      icon: null,
-      updatedAt: new Date().toISOString(),
-    };
-    setActiveId(tempId);
+    if (creating) return;
+    setCreating(true);
     if (parentId) setExpanded(new Set([...expanded, parentId]));
-
-    await mutate(
-      async () => {
-        const res = await fetch("/api/wiki", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ parentId }),
-        });
-        if (!res.ok) throw new Error("create failed");
-        const j = await res.json();
-        setActiveId(j.page.id);
-        return { pages: [...pages.filter((p) => p.id !== tempId), j.page] };
-      },
-      {
-        optimisticData: { pages: [...pages, optimistic] },
-        rollbackOnError: true,
-        revalidate: false,
-      },
-    );
+    try {
+      const res = await fetch("/api/wiki", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ parentId }),
+      });
+      if (!res.ok) throw new Error("create failed");
+      const j = await res.json();
+      // 새 페이지 본문 캐시를 미리 채워서, setActiveId 직후 에디터가 즉시 렌더되도록
+      await globalMutate(`/api/wiki/${j.page.id}`, { page: j.page }, false);
+      await mutate();
+      // 서버 응답 후에만 activeId 변경 — 임시 ID로 인한 재마운트 충돌 방지
+      setActiveId(j.page.id);
+    } finally {
+      setCreating(false);
+    }
   }
 
   async function deletePage(id: string) {
@@ -157,6 +158,8 @@ export function WikiClient({
         </div>
         {studyPage && (
           <button
+            onMouseEnter={() => prefetchPage(studyPage.id)}
+            onTouchStart={() => prefetchPage(studyPage.id)}
             onClick={() => {
               setActiveId(studyPage.id);
               setExpanded(new Set([...expanded, studyPage.id]));
@@ -284,7 +287,12 @@ export function WikiClient({
                   목록
                 </button>
               </div>
-              <WikiEditor key={activeId} id={activeId} onMutateTree={mutate} />
+              <WikiEditor
+                key={activeId}
+                id={activeId}
+                metaHint={pages.find((p) => p.id === activeId) ?? null}
+                onMutateTree={mutate}
+              />
             </>
           ) : (
             <div className="flex h-full flex-col items-center justify-center gap-3 text-fg-muted">
@@ -337,29 +345,41 @@ function PageTree({
               )}
               style={{ paddingLeft: 4 + depth * 14 }}
             >
-              <button
-                onClick={() => onToggle(p.id)}
-                className={cn(
-                  "flex h-6 w-5 items-center justify-center text-fg-subtle hover:text-fg",
-                  !hasChildren && "opacity-30",
+              {/* 아이콘 슬롯 — 기본은 이모지, hover 시 chevron (자식 있을 때만) */}
+              <div className="relative h-6 w-5 shrink-0">
+                <span
+                  aria-hidden
+                  className={cn(
+                    "pointer-events-none absolute inset-0 flex items-center justify-center text-[13px] leading-none",
+                    hasChildren && "transition-opacity group-hover:opacity-0",
+                  )}
+                >
+                  {p.icon ?? <FileText className="h-3 w-3 text-fg-subtle" />}
+                </span>
+                {hasChildren && (
+                  <button
+                    type="button"
+                    onClick={() => onToggle(p.id)}
+                    aria-label={isOpen ? "접기" : "펼치기"}
+                    className="absolute inset-0 flex items-center justify-center rounded text-fg-subtle opacity-0 transition group-hover:opacity-100 hover:text-fg"
+                  >
+                    {isOpen ? (
+                      <ChevronDown className="h-3 w-3" />
+                    ) : (
+                      <ChevronRight className="h-3 w-3" />
+                    )}
+                  </button>
                 )}
-              >
-                {isOpen ? (
-                  <ChevronDown className="h-3 w-3" />
-                ) : (
-                  <ChevronRight className="h-3 w-3" />
-                )}
-              </button>
+              </div>
               <button
+                onMouseEnter={() => prefetchPage(p.id)}
+                onTouchStart={() => prefetchPage(p.id)}
                 onClick={() => {
                   onSelect(p.id);
                   if (hasChildren && !isOpen) onToggle(p.id);
                 }}
-                className="flex flex-1 items-center gap-1.5 truncate py-1 text-left"
+                className="flex flex-1 items-center truncate py-1 text-left"
               >
-                <span className="w-4 text-center">
-                  {p.icon ?? <FileText className="inline h-3 w-3 text-fg-subtle" />}
-                </span>
                 <span className="truncate">{p.title || "이름 없음"}</span>
               </button>
               <button
@@ -441,6 +461,8 @@ function MobilePageRow({
           )}
         </button>
         <button
+          onTouchStart={() => prefetchPage(page.id)}
+          onMouseEnter={() => prefetchPage(page.id)}
           onClick={() => onSelect(page.id)}
           className="flex flex-1 items-center gap-2 text-left"
         >

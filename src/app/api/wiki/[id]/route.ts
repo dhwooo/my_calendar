@@ -11,14 +11,15 @@ const patchSchema = z.object({
   parentId: z.string().nullable().optional(),
 });
 
-type Ctx = { params: { id: string } };
+type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Ctx) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
 
+  const { id } = await params;
   const page = await prisma.wikiPage.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
   });
   if (!page) return new NextResponse("Not Found", { status: 404 });
   return NextResponse.json({ page });
@@ -31,8 +32,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const parsed = patchSchema.safeParse(await req.json());
   if (!parsed.success) return NextResponse.json({ error: "잘못된 입력" }, { status: 400 });
 
+  const { id } = await params;
   const existing = await prisma.wikiPage.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
   });
   if (!existing) return new NextResponse("Not Found", { status: 404 });
 
@@ -47,8 +49,9 @@ export async function DELETE(_req: Request, { params }: Ctx) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) return new NextResponse("Unauthorized", { status: 401 });
 
+  const { id } = await params;
   const existing = await prisma.wikiPage.findFirst({
-    where: { id: params.id, userId: session.user.id },
+    where: { id, userId: session.user.id },
   });
   if (!existing) return new NextResponse("Not Found", { status: 404 });
 
